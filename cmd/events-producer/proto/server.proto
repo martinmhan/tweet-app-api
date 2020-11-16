@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package producer;
+
+option go_package = "github.com/martinmhan/tweet-app-api/cmd/events-producer/proto";
+
+service EventsProducer {
+  rpc produceUserCreation(UserFields) returns(SimpleResponse) {}
+  rpc produceTweetCreation(TweetFields) returns(SimpleResponse) {}
+}
+
+message UserFields {
+  string Username = 1;
+  string Password = 2;
+}
+
+message TweetFields {
+  string UserID = 1;
+  string Text = 2;
+}
+
+message SimpleResponse {
+  string message = 1;
+}
