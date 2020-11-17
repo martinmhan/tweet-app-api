@@ -18,7 +18,7 @@ type CustomClaims struct {
 func CreateJWT(username string, jwtKey string) (string, error) {
 	claims := CustomClaims{
 		username,
-		"PLACEHOLDER",
+		"TO DO",
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 4).Unix(),
 		},
@@ -48,4 +48,16 @@ func ValidateJWT(tokenString string, jwtKey string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+// ValidateUsername checks if a user already exists with the given username
+func ValidateUsername(username string) bool {
+	// TO DO
+	return true
+}
+
+// ValidatePassword checks if the password is correct for the given username
+func ValidatePassword(username string, password string) bool {
+	// TO DO
+	return true
 }
