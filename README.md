@@ -1,44 +1,48 @@
 # tweet-app-api
-Event-Driven, Microservice API for Tweeting app built with Go, gRPC, RabbitMQ
+- Event-Driven Microservices API for a simple tweeting app
+- Built with Go, gRPC, RabbitMQ, MongoDB
 
-#Features:
+# Features:
   Event Driven Architecture (EDA)
-    - Message-Queue with Pub/Sub used to process state-changing events
+    - Message-Queue used to produce/consume state-changing events (in this case, database writes)
   Command Query Responsibility Segregation (CQRS):
-    - The API handles read and write requests separately
-    - Read Optimized View service:
-      - Reads are done via an in-memory data view to optimize speed and to prevent blocking of writes
+    - This API handles read and write requests separately
+    - Reads are done via a Read View service:
+      - This is an-memory data view used to optimize read speeds and to prevent blocking of writes
       - Only queries the DB on cold starts
       - Gets updated by the consumer after each successful write
+    - Writes are done via the queue
+      - The Events Producer publishes a write event to the message queue
+      - The Events Consumer subscribes to and processes the write event
   Domain Driven Design (DDD):
     - Each microservice uses folder structure and abstraction layers to follow DDD principles
-      - Each `/cmd/<SERVICE>/internal` directory contains three subdirectories
-        - `/application`: 
-        - `/domain`: 
-        - `/infrastructure`: 
-    - Additionally, the overall architecture utilizes microservices to  the following:
-      - API Gateway to directly handle all RPC requests from UI
-      - Database Access service that handles all database reads and writes
-  gRPC:
-    - Request/Response-style RPC communication for direct interactions with the user via an API Gateway
-    - Enables flexibility for both synchronous (in this case, reads) and asynchronous (writes) processing of requests
+      - (see `/cmd/internal/` Project Structure notes below)
+    - The overall architecture utilizes microservices to separate contexts and functionality:
+      - (see API architecture diagram below)
+  Remote Procedure Call (RPC):
+    - gRPC used for direct communication with the UI and between services
+      - The only exception being the Events Producer and Events Consumer, which communicate via the Message Queue
+      - This allows for flexibility to handle UI requests either synchronously or asynchronously
+        - Reads are completed and provided synchronously in the gRPC response
+        - Writes are completed asynchronously via the message queue
   Server-Sent Events (SSE)
     - Used to fan out new tweet notifications to a user's followers
-  API Gateway:
-    - JWT-based authentication
-    - Request routing
 
 # Notes:
   - Project Structure
     - `/cmd`: contains subdirectories, each containing the following code for one microservice:
       - `/internal`: code only used by the microservice (i.e., within the same `/cmd/<MICROSERVICE>` directory)
         - `/application`: gRPC server implementation defining RPC handlers
-        - `/domain`: objects containing business logic used by the RPC handlers
-        - `/infrastructure`: if necessary, objects that handle data persistence
+        - `/domain`: business logic used by the RPC handlers
+        - `/infrastructure`: logic to handle data persistence
+        - `main.go`: root file used to run this service
       - `/proto`: contains protocol buffer definitions
         - .proto files are the source files
         - .pb.go files are generated during the build
-      - `main.go`: entry point file that starts the microservice
-    - `/util`
-    - `.env`: 
-    - `Makefile`
+    - `.env`: environment variables
+    - `Makefile`: scripts used to build and run services
+  - Services
+    - API Gateway: 
+    - Events Producer:
+
+<API architecture diagram>

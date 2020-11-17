@@ -77,7 +77,7 @@ func (s *EventsProducerServer) ProduceUserCreation(ctx context.Context, in *pb.U
 	// s.produceEvent()
 
 	return &pb.SimpleResponse{
-		Message: "User creataion event produced",
+		Message: "User creation event produced",
 	}, nil
 }
 
