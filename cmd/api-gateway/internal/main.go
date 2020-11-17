@@ -8,7 +8,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/martinmhan/tweet-app-api/cmd/api-gateway/internal/application"
 	pb "github.com/martinmhan/tweet-app-api/cmd/api-gateway/proto"
-	"github.com/martinmhan/tweet-app-api/util"
 
 	"google.golang.org/grpc"
 )
@@ -25,7 +24,9 @@ func main() {
 	}
 
 	lis, err := net.Listen("tcp", ":"+port)
-	util.FailOnError(err, "Failed to listen")
+	if err != nil {
+		log.Fatal("API Gateway failed to listen: ", err)
+	}
 
 	g := grpc.NewServer()
 	s := &application.APIGatewayServer{
