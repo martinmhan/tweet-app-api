@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package readview;
+
+option go_package = "github.com/martinmhan/tweet-app-api/cmd/readview/proto";
+
+service ReadView {
+  rpc addUser(User) returns (SimpleResponse) {}
+  rpc addTweet(Tweet) returns (SimpleResponse) {}
+  rpc addFollower(Follower) returns (SimpleResponse) {}
+  rpc getUserByUsername(Username) returns(User) {}
+  rpc getUserByUserID(UserID) returns (User) {}
+  rpc getTweets(UserID) returns (Tweets) {}
+  rpc getTimeline(UserID) returns (Tweets) {}
+}
+
+message User {
+  string UserID = 1;
+  string Username = 2;
+  string Password = 3;
+}
+
+message Username {
+  string Username = 1;
+}
+
+message UserID {
+  string UserID = 1;
+}
+
+message Follower {
+  string FollowerUserID = 1;
+  string FollowsUserID = 2;
+}
+
+message Tweet {
+  string TweetID = 1;
+  string UserID = 2;
+  string Username = 3;
+  string Text = 4;
+}
+
+message Tweets {
+  repeated Tweet Tweets = 1;
+}
+
+message SimpleResponse {
+  string message = 1;
+}
