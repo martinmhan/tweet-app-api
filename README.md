@@ -1,12 +1,20 @@
 # Tweet App API
 - Event-Driven Microservices API for a simple tweeting app
 - Built with Go, gRPC, RabbitMQ, MongoDB
+- UI client TBD
 
 # Pre-Requisites:
   TBD
 
 # Getting Started:
-  TBD
+  - Run MongoDB and RabbitMQ daemons:
+    - In MacOS, something like `brew services start mongodb` and `brew services start rabbitmq`
+  - Create MongoDB database:
+    - In a terminal window, navigate to the /db directory and run the upgrade.sh script
+  - Build and run services:
+    - To run services locally, open a terminal window and run the `build-and-run` Makefile script for each service (e.g., `make build-and-run BIN=eventproducer`)
+    - Services must be started in the following order to avoid fatal connection errors: 1) databaseaccess, 2) readview, 3) eventconsumer, 4) eventproducer, 5) apigateway
+  - Ping the API gateway (via an RPC client tool such as BloomRPC) to create a user, log in, post a tweet, etc.
 
 # Features:
   - Event Driven Architecture (EDA)
