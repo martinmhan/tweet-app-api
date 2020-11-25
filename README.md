@@ -2,6 +2,12 @@
 - Event-Driven Microservices API for a simple tweeting app
 - Built with Go, gRPC, RabbitMQ, MongoDB
 
+# Pre-requisites:
+  TBD
+
+# Getting Started:
+  TBD
+
 # Features:
   Event Driven Architecture (EDA)
     - Message-Queue used to produce/consume state-changing events (in this case, database writes)
@@ -31,7 +37,7 @@
 # Notes:
   - Project Structure
     - `/cmd`: contains subdirectories, each containing the following code for one microservice:
-      - `/internal`: code only used by the microservice (i.e., within the same `/cmd/<MICROSERVICE>` directory)
+      - `/internal`: code only used by the microservice (i.e., within the same `/cmd/<MICROSERVICE>` directory). Includes at least one of the following subdirectories
         - `/application`: gRPC server implementation defining RPC handlers
         - `/domain`: business logic used by the RPC handlers
         - `/infrastructure`: logic to handle data persistence
@@ -44,5 +50,11 @@
   - Services
     - API Gateway: 
     - Events Producer:
+  - RabbitMQ has more robust functionality such as routing messages to queues via exchanges. However, just one queue and no exchage was used here due to the API's simplicity.
 
 <API architecture diagram>
+
+# Resources:
+  - https://golang.org/doc/effective_go.html
+  - https://github.com/golang-standards/project-layout
+  - https://github.com/vardius/go-api-boilerplate
