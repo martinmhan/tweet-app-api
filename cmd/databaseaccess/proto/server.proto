@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package database;
+
+option go_package = "github.com/martinmhan/tweet-app-api/cmd/databaseaccess/proto";
+
+service DatabaseAccess {
+  rpc insertUser(UserConfig) returns (InsertID) {}
+  rpc insertFollower(Follower) returns (InsertID) {}
+  rpc insertTweet(TweetConfig) returns (InsertID) {}
+  rpc getUser(UserID) returns (User) {}
+  rpc getFollowers(UserID) returns (Followers) {}
+  rpc getTweets(UserID) returns (Tweets) {}
+  rpc getAllUsers(GetAllUsersParam) returns (Users) {}
+  rpc getAllFollowers(GetAllFollowersParam) returns (Followers) {}
+  rpc getAllTweets(GetAllTweetsParam) returns (Tweets) {}
+}
+
+message UserConfig {
+  string Username = 1;
+  string Password = 2;
+}
+
+message User {
+  string UserID = 1;
+  string Username = 2;
+  string Password = 3;
+}
+
+message Users {
+  repeated User Users = 1;
+}
+
+message UserID {
+  string UserID = 1;
+}
+
+message TweetConfig {
+  string UserID = 1;
+  string Username = 2;
+  string Text = 3;
+}
+
+message Tweet {
+  string TweetID = 1;
+  string UserID = 2;
+  string Username = 3;
+  string Text = 4;
+}
+
+message Tweets {
+  repeated Tweet Tweets = 1;
+}
+
+message Follower {
+  string FollowerUserID = 1;
+  string FolloweeUserID = 2;
+}
+
+message Followers {
+  repeated Follower Followers = 1;
+}
+
+message GetAllUsersParam {}
+message GetAllFollowersParam {}
+message GetAllTweetsParam {}
+
+message InsertID {
+  string InsertID = 1;
+}
