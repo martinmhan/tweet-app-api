@@ -8,6 +8,8 @@ build-proto: # Example: `make build-proto BIN=apigateway`
 		protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative cmd/$(BIN)/proto/server.proto; \
 	fi
 build: # Example: `make build BIN=apigateway`
-	go get github.com/martinmhan/tweet-app-api/cmd/$(BIN)/internal && make build-proto BIN=$(BIN)
+	make build-proto BIN=$(BIN) && go get ./cmd/$(BIN)/...
 run: # Example: `make run BIN=apigateway`
 	go run cmd/$(BIN)/internal/main.go
+build-and-run: # Example `make build-and-run BIN=apigateway`
+	make build BIN=$(BIN) && make run BIN=$(BIN)
