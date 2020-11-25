@@ -3,49 +3,52 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/martinmhan/tweet-app-api/cmd/api-gateway/internal/domain/authorization"
-	"github.com/martinmhan/tweet-app-api/cmd/api-gateway/internal/domain/events"
-	pb "github.com/martinmhan/tweet-app-api/cmd/api-gateway/proto"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/auth"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/rpcclient"
+	pb "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto"
 	"google.golang.org/grpc/metadata"
 )
 
-// APIGatewayServer is a struct type containing the fields and methods used by the API Gateway service
+// APIGatewayServer contains the fields and gRPC method implementations used by the API Gateway service
 type APIGatewayServer struct {
 	pb.UnimplementedAPIGatewayServer
-	JWTKey             string
-	EventsProducerHost string
-	EventsProducerPort string
-	ReadViewHost       string
-	ReadViewPort       string
+	rpcclient.EventProducer
+	rpcclient.ReadView
+	auth.Authorization
 }
 
 // LoginUser provides a JWT given a valid username/password
 func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.User) (*pb.JWT, error) {
-	valid := authorization.ValidatePassword(in.Username, in.Password)
+	valid, err := s.ValidatePassword(in.Username, in.Password)
+	if err != nil {
+		return nil, err
+	}
+
 	if !valid {
-		fmt.Println("Invalid username/password")
 		return nil, errors.New("Invalid username or password")
 	}
 
-	token, err := authorization.CreateJWT(in.Username, s.JWTKey)
+	token, err := s.CreateJWT(in.Username)
 	if err != nil {
-		fmt.Println("Failed to create JWT", err)
 		return &pb.JWT{}, err
 	}
 
 	return &pb.JWT{JWT: token}, nil
 }
 
-// CreateUser calls the event producer to create a new user (if the username is available), then responds to the initial gRPC
+// CreateUser validates the new username, then calls the event producer to publish a CreateUser event and responds to the initial gRPC
 func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.User) (*pb.SimpleResponse, error) {
-	valid := authorization.ValidateUsername(in.Username)
+	valid, err := s.ValidateUsername(in.Username)
+	if err != nil {
+		return nil, err
+	}
+
 	if !valid {
 		return &pb.SimpleResponse{Message: "Username already exists"}, errors.New("Failed to create new user")
 	}
 
-	events.ProduceUserCreation(s.EventsProducerHost, s.EventsProducerPort, in.Username, in.Password)
+	s.ProduceUserCreation(in.Username, in.Password)
 
 	return &pb.SimpleResponse{
 		Message: "User Creation accepted",
@@ -60,15 +63,15 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.S
 	}
 
 	tokenString := headers["authorization"][0]
-	token, err := authorization.ValidateJWT(tokenString, s.JWTKey)
+	token, err := s.ValidateJWT(tokenString)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Invalid JWT"}, err
 	}
 
-	claims := token.Claims.(*authorization.CustomClaims)
+	claims := token.Claims.(*auth.JWTClaims)
 	uid := claims.UserID
 
-	events.ProduceTweetCreation(s.EventsProducerHost, s.EventsProducerPort, in.Text, uid)
+	s.ProduceTweetCreation(in.Text, uid)
 
 	return &pb.SimpleResponse{
 		Message: "Tweet Creation accepted",
@@ -83,20 +86,35 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tw
 	}
 
 	tokenString := headers["authorization"][0]
-	token, err := authorization.ValidateJWT(tokenString, s.JWTKey)
+	token, err := s.ValidateJWT(tokenString)
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
 
-	claims := token.Claims.(*authorization.CustomClaims)
-	uid := claims.UserID
+	claims := token.Claims.(*auth.JWTClaims)
+	if claims.UserID != in.UserID {
+		return &pb.Tweets{}, errors.New("Unauthorized")
+	}
 
-	fmt.Print(uid) // TO DO - call read view, return values
+	tweets, err := s.ReadView.GetTweets(in.UserID)
+	if err != nil {
+		return &pb.Tweets{}, err
+	}
 
-	return &pb.Tweets{}, nil
+	var pbTweets pb.Tweets
+	for i, t := range tweets {
+		pbTweets.Tweets[i] = &pb.Tweet{
+			TweetID:  t.TweetID,
+			UserID:   t.UserID,
+			Username: t.Username,
+			Text:     t.Text,
+		}
+	}
+
+	return &pbTweets, nil
 }
 
-// GetTimeline returns the timeline (i.e., following users' tweets) of a given UserID
+// GetTimeline returns the timeline (i.e., tweets of users that this user follows) of a given UserID
 func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -104,15 +122,30 @@ func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.
 	}
 
 	tokenString := headers["authorization"][0]
-	token, err := authorization.ValidateJWT(tokenString, s.JWTKey)
+	token, err := s.ValidateJWT(tokenString)
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
 
-	claims := token.Claims.(*authorization.CustomClaims)
-	uid := claims.UserID
+	claims := token.Claims.(*auth.JWTClaims)
+	if claims.UserID != in.UserID {
+		return &pb.Tweets{}, errors.New("Unauthorized")
+	}
 
-	fmt.Print(uid) // TO DO - call read view, return values
+	tweets, err := s.ReadView.GetTweets(in.UserID)
+	if err != nil {
+		return &pb.Tweets{}, err
+	}
 
-	return &pb.Tweets{}, nil
+	var pbTweets pb.Tweets
+	for i, t := range tweets {
+		pbTweets.Tweets[i] = &pb.Tweet{
+			TweetID:  t.TweetID,
+			UserID:   t.UserID,
+			Username: t.Username,
+			Text:     t.Text,
+		}
+	}
+
+	return &pbTweets, nil
 }

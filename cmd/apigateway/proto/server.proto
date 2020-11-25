@@ -2,13 +2,14 @@ syntax = "proto3";
 
 package gateway;
 
-option go_package = "github.com/martinmhan/tweet-app-api/cmd/api-gateway/proto";
+option go_package = "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto";
 
 service APIGateway {
   rpc loginUser(User) returns (JWT) {}
   rpc createUser(User) returns (SimpleResponse) {}
   rpc createTweet(Tweet) returns(SimpleResponse) {}
   rpc getTweets(UserID) returns(Tweets) {}
+  rpc getTimeline(UserID) returns(Tweets) {}
 }
 
 message JWT {
@@ -25,8 +26,10 @@ message UserID {
 }
 
 message Tweet {
-  string Username = 1;
-  string Text = 2;
+  string TweetID = 1;
+  string UserID = 2;
+  string Username = 3;
+  string Text = 4;
 }
 
 message Tweets {
