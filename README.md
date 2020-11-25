@@ -51,7 +51,7 @@
   - RabbitMQ has more robust functionality such as routing messages to queues via exchanges. However, just one queue and no exchage was used here due to the API's simplicity.
 
 # API Architecture:
-![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-25+at+1.01.24+PM.png)
+![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-25+at+1.17.23+PM.png)
 
 # Resources:
   - https://golang.org/doc/effective_go.html
