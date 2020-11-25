@@ -1,8 +1,8 @@
-# tweet-app-api
+# Tweet App API
 - Event-Driven Microservices API for a simple tweeting app
 - Built with Go, gRPC, RabbitMQ, MongoDB
 
-# Pre-requisites:
+# Pre-Requisites:
   TBD
 
 # Getting Started:
@@ -52,7 +52,8 @@
     - Events Producer:
   - RabbitMQ has more robust functionality such as routing messages to queues via exchanges. However, just one queue and no exchage was used here due to the API's simplicity.
 
-<API architecture diagram>
+# API Architecture:
+![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-25+at+1.01.24+PM.png)
 
 # Resources:
   - https://golang.org/doc/effective_go.html
