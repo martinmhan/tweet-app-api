@@ -45,10 +45,9 @@
         - .pb.go files are generated during the build
     - `.env`: environment variables
     - `Makefile`: scripts used to build and run services
-  - Services
-    - API Gateway: 
-    - Events Producer:
-  - RabbitMQ has more robust functionality such as routing messages to queues via exchanges. However, just one queue and no exchage was used here due to the API's simplicity.
+  - Services Overview
+    TBD
+  - RabbitMQ has more robust functionality such as routing messages to queues via exchanges. However, just one queue and no exchange was used here due to this API's simplicity.
 
 # API Architecture:
 ![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-25+at+1.17.23+PM.png)
