@@ -9,9 +9,9 @@
   TBD
 
 # Features:
-  Event Driven Architecture (EDA)
+  - Event Driven Architecture (EDA)
     - Message-Queue used to produce/consume state-changing events (in this case, database writes)
-  Command Query Responsibility Segregation (CQRS):
+  - Command Query Responsibility Segregation (CQRS):
     - This API handles read and write requests separately
     - Reads are done via a Read View service:
       - This is an-memory data view used to optimize read speeds and to prevent blocking of writes
@@ -20,19 +20,17 @@
     - Writes are done via the queue
       - The Events Producer publishes a write event to the message queue
       - The Events Consumer subscribes to and processes the write event
-  Domain Driven Design (DDD):
+  - Domain Driven Design (DDD):
     - Each microservice uses folder structure and abstraction layers to follow DDD principles
       - (see `/cmd/internal/` Project Structure notes below)
     - The overall architecture utilizes microservices to separate contexts and functionality:
       - (see API architecture diagram below)
-  Remote Procedure Call (RPC):
+  - Remote Procedure Call (RPC):
     - gRPC used for direct communication with the UI and between services
       - The only exception being the Events Producer and Events Consumer, which communicate via the Message Queue
       - This allows for flexibility to handle UI requests either synchronously or asynchronously
         - Reads are completed and provided synchronously in the gRPC response
         - Writes are completed asynchronously via the message queue
-  Server-Sent Events (SSE)
-    - Used to fan out new tweet notifications to a user's followers
 
 # Notes:
   - Project Structure
