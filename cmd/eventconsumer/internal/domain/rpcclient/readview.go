@@ -59,7 +59,7 @@ func (rv *ReadView) AddUser(u User) error {
 	c := readviewpb.NewReadViewClient(rv.conn)
 
 	user := readviewpb.User{
-		UserID:   u.UserID,
+		UserID:   u.ID,
 		Username: u.Username,
 		Password: u.Password,
 	}
@@ -90,7 +90,7 @@ func (rv *ReadView) AddTweet(t Tweet) error {
 
 // User TO DO
 type User struct {
-	UserID   string
+	ID       string
 	Username string
 	Password string
 }

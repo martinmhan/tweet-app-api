@@ -16,7 +16,7 @@ type ReadViewServer struct {
 // AddUser adds a user to the ReadViewServer's  data store
 func (s *ReadViewServer) AddUser(ctx context.Context, in *pb.User) (*pb.SimpleResponse, error) {
 	u := datastore.User{
-		UserID:   datastore.UserID(in.UserID),
+		ID:       datastore.UserID(in.ID),
 		Username: in.Username,
 		Password: in.Password,
 	}
@@ -63,7 +63,7 @@ func (s *ReadViewServer) GetUserByUserID(ctx context.Context, in *pb.UserID) (*p
 	}
 
 	return &pb.User{
-		UserID:   string(u.UserID),
+		ID:       string(u.ID),
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
@@ -77,7 +77,7 @@ func (s *ReadViewServer) GetUserByUsername(ctx context.Context, in *pb.Username)
 	}
 
 	return &pb.User{
-		UserID:   string(u.UserID),
+		ID:       string(u.ID),
 		Username: u.Username,
 		Password: u.Password,
 	}, nil

@@ -55,7 +55,7 @@ func (s *DatabaseAccessServer) GetUser(ctx context.Context, in *pb.UserID) (*pb.
 	}
 
 	return &pb.User{
-		UserID:   u.ID,
+		ID:       u.ID,
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
@@ -109,7 +109,7 @@ func (s *DatabaseAccessServer) GetAllUsers(ctx context.Context, in *pb.GetAllUse
 	var pbUsers []*pb.User
 	for _, u := range users {
 		pbUsers = append(pbUsers, &pb.User{
-			UserID:   u.ID,
+			ID:       u.ID,
 			Username: u.Username,
 			Password: u.Password,
 		})

@@ -30,7 +30,7 @@ func (e *EventConsumer) createUser(eventPayload []byte) error {
 		return err
 	}
 
-	u := rpcclient.User{UserID: id, Username: uc.Username, Password: uc.Password}
+	u := rpcclient.User{ID: id, Username: uc.Username, Password: uc.Password}
 	err = e.AddUser(u) // adds created user to read view
 	if err != nil {
 		return err

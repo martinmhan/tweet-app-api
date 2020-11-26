@@ -51,7 +51,7 @@ func (ds *Datastore) Initialize() error {
 	}
 
 	for _, u := range users.Users {
-		ds.Users[UserID(u.UserID)] = UserConfig{
+		ds.Users[UserID(u.ID)] = UserConfig{
 			Username: u.Username,
 			Password: u.Password,
 		}
@@ -91,16 +91,16 @@ func (ds *Datastore) Initialize() error {
 
 // AddUser adds a user to the datastore
 func (ds *Datastore) AddUser(u User) error {
-	if u.UserID == "" || u.Username == "" {
+	if u.ID == "" || u.Username == "" {
 		return errors.New("Invalid user")
 	}
 
-	_, ok := ds.Users[u.UserID]
+	_, ok := ds.Users[u.ID]
 	if ok {
 		return errors.New("User already exists")
 	}
 
-	ds.Users[u.UserID] = UserConfig{Username: u.Username, Password: u.Password}
+	ds.Users[u.ID] = UserConfig{Username: u.Username, Password: u.Password}
 
 	return nil
 }
@@ -145,7 +145,7 @@ func (ds *Datastore) GetUserByUserID(uid UserID) (User, error) {
 	}
 
 	return User{
-		UserID:   uid,
+		ID:       uid,
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
@@ -156,7 +156,7 @@ func (ds *Datastore) GetUserByUsername(username string) (User, error) {
 	for uid, u := range ds.Users {
 		if u.Username == username {
 			return User{
-				UserID:   uid,
+				ID:       uid,
 				Username: u.Username,
 				Password: u.Password,
 			}, nil
@@ -194,7 +194,7 @@ func (ds *Datastore) GetTimeline(uid UserID) ([]Tweet, error) {
 
 // User TO DO
 type User struct {
-	UserID   UserID
+	ID       UserID
 	Username string
 	Password string
 }

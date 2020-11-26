@@ -22,7 +22,7 @@ message UserConfig {
 }
 
 message User {
-  string UserID = 1;
+  string ID = 1;
   string Username = 2;
   string Password = 3;
 }

@@ -63,7 +63,7 @@ func (rv *ReadView) GetUserByUsername(username string) (User, error) {
 	}
 
 	return User{
-		UserID:   u.UserID,
+		ID:       u.ID,
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
@@ -83,7 +83,7 @@ func (rv *ReadView) GetUserByUserID(userID string) (User, error) {
 	}
 
 	return User{
-		UserID:   u.UserID,
+		ID:       u.ID,
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
@@ -139,7 +139,7 @@ func (rv *ReadView) GetTimeline(userID string) (Tweets, error) {
 
 // User TO DO
 type User struct {
-	UserID   string
+	ID       string
 	Username string
 	Password string
 }
