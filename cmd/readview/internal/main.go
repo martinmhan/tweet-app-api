@@ -26,7 +26,7 @@ func main() {
 	ds := datastore.Datastore{DatabaseAccessHost: dahost, DatabaseAccessPort: daport}
 	err := ds.Initialize()
 	if err != nil {
-		log.Fatal("Failed to initialize data store")
+		log.Fatal("Failed to initialize data store: ", err)
 	}
 
 	g := grpc.NewServer()

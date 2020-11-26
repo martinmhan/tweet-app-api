@@ -3,6 +3,7 @@ package rpcclient
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -18,7 +19,11 @@ type ReadView struct {
 
 // Connect creates a connection to the Read View service
 func (rv *ReadView) Connect() error {
-	conn, err := grpc.Dial(rv.Host+":"+rv.Port, grpc.WithInsecure(), grpc.WithBlock())
+	target := rv.Host + ":" + rv.Port
+	ctx, cancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}

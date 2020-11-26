@@ -3,6 +3,7 @@ package rpcclient
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -18,7 +19,11 @@ type EventProducer struct {
 
 // Connect establishes a gRPC client connection to the Event Producer service
 func (ep *EventProducer) Connect() error {
-	conn, err := grpc.Dial(ep.Host+":"+ep.Port, grpc.WithInsecure(), grpc.WithBlock())
+	target := ep.Host + ":" + ep.Port
+	ctx, cancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}

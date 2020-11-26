@@ -3,6 +3,7 @@ package rpcclient
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -19,7 +20,11 @@ type DatabaseAccess struct {
 
 // Connect establishes a gRPC client connection
 func (da *DatabaseAccess) Connect() error {
-	conn, err := grpc.Dial(da.Host+":"+da.Port, grpc.WithInsecure(), grpc.WithBlock())
+	target := da.Host + ":" + da.Port
+	ctx, cancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return errors.New("Could not connect to database access server")
 	}

@@ -3,13 +3,15 @@ package datastore
 import (
 	"context"
 	"errors"
+	"log"
+	"time"
 
 	"google.golang.org/grpc"
 
 	databaseaccesspb "github.com/martinmhan/tweet-app-api/cmd/databaseaccess/proto"
 )
 
-// Datastore TO DO
+// Datastore is an in-memory object that stores a copy of all the data for this app
 type Datastore struct {
 	DatabaseAccessHost string
 	DatabaseAccessPort string
@@ -20,7 +22,13 @@ type Datastore struct {
 
 // Initialize populates the in-memory data store by fetching data via the Database Access service (only called when the server starts)
 func (ds *Datastore) Initialize() error {
-	conn, err := grpc.Dial(ds.DatabaseAccessHost+":"+ds.DatabaseAccessPort, grpc.WithInsecure(), grpc.WithBlock())
+	log.Println("Initializing data store")
+
+	target := ds.DatabaseAccessHost + ":" + ds.DatabaseAccessPort
+	ctx, cancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return err
 	}
