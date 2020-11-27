@@ -6,7 +6,7 @@ type Follower struct {
 	FolloweeUserID string
 }
 
-// Repository TO DO
+// Repository interface for fetching users' followers
 type Repository interface {
 	FindByUserID(userid string) []Follower
 }

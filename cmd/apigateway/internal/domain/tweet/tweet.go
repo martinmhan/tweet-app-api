@@ -15,7 +15,7 @@ type Tweet struct {
 	Text     string
 }
 
-// Repository TO DO
+// Repository interface for fetching users' tweets and timelines
 type Repository interface {
 	FindByUserID(UserID string) ([]Tweet, error)
 	FindTimelineByUserID(UserID string) ([]Tweet, error)

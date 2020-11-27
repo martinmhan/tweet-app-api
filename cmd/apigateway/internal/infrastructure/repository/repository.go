@@ -9,12 +9,12 @@ import (
 	readviewpb "github.com/martinmhan/tweet-app-api/cmd/readview/proto"
 )
 
-// UserRepository TO DO
+// UserRepository implements the user repository
 type UserRepository struct {
 	readviewpb.ReadViewClient
 }
 
-// FindByUserID TO DO
+// FindByUserID fetches a user given a userID
 func (ur *UserRepository) FindByUserID(userID string) (user.User, error) {
 	uid := readviewpb.UserID{UserID: userID}
 	u, err := ur.ReadViewClient.GetUserByUserID(context.TODO(), &uid)
@@ -29,7 +29,7 @@ func (ur *UserRepository) FindByUserID(userID string) (user.User, error) {
 	}, nil
 }
 
-// FindByUsername TO DO
+// FindByUsername fetches a user given a username
 func (ur *UserRepository) FindByUsername(username string) (user.User, error) {
 	un := readviewpb.Username{Username: username}
 	u, err := ur.ReadViewClient.GetUserByUsername(context.TODO(), &un)
@@ -44,12 +44,12 @@ func (ur *UserRepository) FindByUsername(username string) (user.User, error) {
 	}, nil
 }
 
-// TweetRepository TO DO
+// TweetRepository implements the tweet repository
 type TweetRepository struct {
 	readviewpb.ReadViewClient
 }
 
-// FindByUserID TO DO
+// FindByUserID fetches tweets of a given user
 func (tr *TweetRepository) FindByUserID(userID string) ([]tweet.Tweet, error) {
 	uid := readviewpb.UserID{UserID: userID}
 	pbtweets, err := tr.ReadViewClient.GetTweets(context.TODO(), &uid)
@@ -65,7 +65,7 @@ func (tr *TweetRepository) FindByUserID(userID string) ([]tweet.Tweet, error) {
 	return tweets, nil
 }
 
-// FindTimelineByUserID TO DO
+// FindTimelineByUserID fetches the tweets of users followed by a given user
 func (tr *TweetRepository) FindTimelineByUserID(userID string) ([]tweet.Tweet, error) {
 	uid := readviewpb.UserID{UserID: userID}
 	pbtweets, err := tr.ReadViewClient.GetTimeline(context.TODO(), &uid)
@@ -85,12 +85,12 @@ func (tr *TweetRepository) FindTimelineByUserID(userID string) ([]tweet.Tweet, e
 	return tweets, nil
 }
 
-// FollowerRepository TO DO
+// FollowerRepository implements the follower repository
 type FollowerRepository struct {
 	readviewpb.ReadViewClient
 }
 
-// FindByUserID TO DO
+// FindByUserID fetches the followers of a given user (i.,e., the followee)
 func (fr *FollowerRepository) FindByUserID(userID string) ([]follower.Follower, error) {
 	uid := readviewpb.UserID{UserID: userID}
 	pbfollowers, err := fr.ReadViewClient.GetFollowers(context.TODO(), &uid)

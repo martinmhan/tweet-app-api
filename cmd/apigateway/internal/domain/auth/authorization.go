@@ -10,8 +10,7 @@ import (
 
 // Authorization provides methods for creating/validating JWTs, passwords, and new usernames
 type Authorization struct {
-	JWTKey string
-	// ReadView rpcclient.ReadView
+	JWTKey         string
 	UserRepository user.Repository
 }
 
