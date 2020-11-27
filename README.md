@@ -54,16 +54,21 @@
 
 
 # Pre-Requisites:
-  TBD
+  - Go (https://golang.org/doc/install)
+  - Protocol Buffer (https://grpc.io/docs/languages/go/quickstart/)
+  - RabbitMQ (https://www.rabbitmq.com/download.html)
+  - MongoDB(https://docs.mongodb.com/manual/installation/)
 
 # Getting Started:
   - Run MongoDB and RabbitMQ daemons:
     - In MacOS, something like `brew services start mongodb` and `brew services start rabbitmq`
-  - Create MongoDB database:
+  - Initialize MongoDB database:
     - In a terminal window, navigate to the /scripts/db directory and run `upgrade.sh`
-  - Build and run services:
-    - To run services locally, open a terminal window and run the `build-and-run` Makefile script for each service (e.g., `make build-and-run BIN=eventproducer`)
-    - Start the services in the following order to avoid fatal connection errors: 1) databaseaccess, 2) readview, 3) eventconsumer, 4) eventproducer, 5) apigateway
+  - Build services:
+    - In a terminal window, run `make build-all`
+  - Run services:
+    - To run services locally, open a terminal window for each service and run the make run script (e.g., `make run BIN=eventproducer`)
+    - Start the services in the following order to avoid connection timeout errors: 1) databaseaccess, 2) readview, 3) eventconsumer, 4) eventproducer, 5) apigateway
   - Ping the API gateway (via an RPC client tool such as BloomRPC) to create a user, log in, write a tweet, etc.
 
 # Resources:
