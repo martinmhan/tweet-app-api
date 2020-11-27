@@ -5,29 +5,30 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/rpcclient"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/user"
 )
 
 // Authorization provides methods for creating/validating JWTs, passwords, and new usernames
 type Authorization struct {
-	JWTKey   string
-	ReadView rpcclient.ReadView
+	JWTKey string
+	// ReadView rpcclient.ReadView
+	UserRepository user.Repository
 }
 
 // CreateJWT creates a JSON web token with username and expiration properties given a username and jwtKey
 func (a *Authorization) CreateJWT(username string) (string, error) {
-	u, err := a.ReadView.GetUserByUsername(username)
+	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return "", err
 	}
 
-	if u.UserID == "" {
+	if u.ID == "" {
 		return "", errors.New("User does not exist")
 	}
 
 	claims := JWTClaims{
 		username,
-		u.UserID,
+		u.ID,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 4).Unix(),
 		},
@@ -61,12 +62,12 @@ func (a *Authorization) ValidateJWT(tokenString string) (*jwt.Token, error) {
 
 // ValidateUsername checks if a user already exists with the given username
 func (a *Authorization) ValidateUsername(username string) (bool, error) {
-	u, err := a.ReadView.GetUserByUsername(username)
+	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return false, err
 	}
 
-	if u.UserID != "" {
+	if u.ID != "" {
 		return false, nil
 	}
 
@@ -75,12 +76,12 @@ func (a *Authorization) ValidateUsername(username string) (bool, error) {
 
 // ValidatePassword checks if the given password is correct for the given username
 func (a *Authorization) ValidatePassword(username string, password string) (bool, error) {
-	u, err := a.ReadView.GetUserByUsername(username)
+	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return false, err
 	}
 
-	if u.UserID == "" {
+	if u.ID == "" {
 		return false, nil
 	}
 

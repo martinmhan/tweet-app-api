@@ -1,17 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/application"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/auth"
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/rpcclient"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/infrastructure/eventproducer"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/infrastructure/repository"
 	pb "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto"
+	eventproducerpb "github.com/martinmhan/tweet-app-api/cmd/eventproducer/proto"
+	readviewpb "github.com/martinmhan/tweet-app-api/cmd/readview/proto"
 )
 
 func main() {
@@ -19,42 +24,44 @@ func main() {
 
 	jwtKey := os.Getenv("JWT_KEY")
 	port := os.Getenv("AG_PORT")
-	ephost := os.Getenv("EP_HOST")
-	epport := os.Getenv("EP_PORT")
-	rvhost := os.Getenv("RV_HOST")
-	rvport := os.Getenv("RV_PORT")
-	if jwtKey == "" || port == "" || ephost == "" || epport == "" || rvhost == "" || rvport == "" {
+	epHost := os.Getenv("EP_HOST")
+	epPort := os.Getenv("EP_PORT")
+	rvHost := os.Getenv("RV_HOST")
+	rvPort := os.Getenv("RV_PORT")
+	if jwtKey == "" || port == "" || epHost == "" || epPort == "" || rvHost == "" || rvPort == "" {
 		log.Fatal("Missing environment variable(s). Please edit .env file")
 	}
 
-	eventproducerClient := rpcclient.EventProducer{
-		Host: ephost,
-		Port: epport,
-	}
-	readviewClient := rpcclient.ReadView{
-		Host: rvhost,
-		Port: rvport,
-	}
+	rvTarget := rvHost + ":" + rvPort
+	rvCtx, rvCancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer rvCancel()
 
-	err := eventproducerClient.Connect()
+	rvConn, err := grpc.DialContext(rvCtx, rvTarget, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatal("Failed to connect EventProducer client: ", err)
+		log.Fatal("Failed to connect readview gRPC client")
 	}
-	err = readviewClient.Connect()
+	defer rvConn.Close()
+
+	epTarget := epHost + ":" + epPort
+	epCtx, epCancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
+	defer epCancel()
+
+	epConn, err := grpc.DialContext(epCtx, epTarget, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatal("Failed to connect ReadView client: ", err)
+		log.Fatal("Failed to connect eventproducer gRPC client")
 	}
+	defer epConn.Close()
 
-	defer eventproducerClient.Disconnect()
-	defer readviewClient.Disconnect()
-
-	a := auth.Authorization{JWTKey: jwtKey, ReadView: readviewClient}
+	rvClient := readviewpb.NewReadViewClient(rvConn)
+	epClient := eventproducerpb.NewEventProducerClient(epConn)
 
 	g := grpc.NewServer()
 	s := &application.APIGatewayServer{
-		EventProducer: eventproducerClient,
-		ReadView:      readviewClient,
-		Authorization: a,
+		Authorization:      auth.Authorization{JWTKey: jwtKey, UserRepository: nil},
+		EventProducer:      eventproducer.EventProducer{EventProducerClient: epClient},
+		UserRepository:     repository.UserRepository{ReadViewClient: rvClient},
+		FollowerRepository: repository.FollowerRepository{ReadViewClient: rvClient},
+		TweetRepository:    repository.TweetRepository{ReadViewClient: rvClient},
 	}
 
 	pb.RegisterAPIGatewayServer(g, s)

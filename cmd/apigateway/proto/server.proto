@@ -8,6 +8,7 @@ service APIGateway {
   rpc loginUser(User) returns (JWT) {}
   rpc createUser(User) returns (SimpleResponse) {}
   rpc createTweet(Tweet) returns(SimpleResponse) {}
+  rpc follow(UserID) returns(SimpleResponse) {}
   rpc getTweets(UserID) returns(Tweets) {}
   rpc getTimeline(UserID) returns(Tweets) {}
 }
