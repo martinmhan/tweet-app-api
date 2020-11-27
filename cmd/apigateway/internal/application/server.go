@@ -143,7 +143,7 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tw
 	var pbTweets pb.Tweets
 	for i, t := range tweets {
 		pbTweets.Tweets[i] = &pb.Tweet{
-			TweetID:  t.ID,
+			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,
@@ -179,7 +179,7 @@ func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.
 	var pbTweets pb.Tweets
 	for i, t := range tweets {
 		pbTweets.Tweets[i] = &pb.Tweet{
-			TweetID:  t.ID,
+			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,

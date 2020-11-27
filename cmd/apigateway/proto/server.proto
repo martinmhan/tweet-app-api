@@ -9,12 +9,17 @@ service APIGateway {
   rpc createUser(User) returns (SimpleResponse) {}
   rpc createTweet(Tweet) returns(SimpleResponse) {}
   rpc follow(UserID) returns(SimpleResponse) {}
+  rpc getFollowers(UserID) returns(Followers) {}
   rpc getTweets(UserID) returns(Tweets) {}
   rpc getTimeline(UserID) returns(Tweets) {}
 }
 
 message JWT {
   string JWT = 1;
+}
+
+message SimpleResponse {
+  string Message = 1;
 }
 
 message User {
@@ -26,8 +31,17 @@ message UserID {
   string UserID = 1;
 }
 
+message Follower {
+  string FollowerUserID = 1;
+  string FolloweeUserID = 2;
+}
+
+message Followers {
+  repeated Follower Followers = 1;
+}
+
 message Tweet {
-  string TweetID = 1;
+  string ID = 1;
   string UserID = 2;
   string Username = 3;
   string Text = 4;
@@ -35,8 +49,4 @@ message Tweet {
 
 message Tweets {
   repeated Tweet Tweets = 1;
-}
-
-message SimpleResponse {
-  string Message = 1;
 }
