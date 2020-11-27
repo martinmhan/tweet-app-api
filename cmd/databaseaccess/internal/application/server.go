@@ -3,20 +3,24 @@ package application
 import (
 	"context"
 
-	"github.com/martinmhan/tweet-app-api/cmd/databaseaccess/internal/infrastructure/dbaccess"
+	"github.com/martinmhan/tweet-app-api/cmd/databaseaccess/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/databaseaccess/internal/domain/tweet"
+	"github.com/martinmhan/tweet-app-api/cmd/databaseaccess/internal/domain/user"
 	pb "github.com/martinmhan/tweet-app-api/cmd/databaseaccess/proto"
 )
 
 // DatabaseAccessServer contains the fields and gRPC method implementations used by the DatabaseAccess service
 type DatabaseAccessServer struct {
 	pb.UnimplementedDatabaseAccessServer
-	DBAccesser dbaccess.DBAccesser
+	UserRepository     user.Repository
+	FollowerRepository follower.Repository
+	TweetRepository    tweet.Repository
 }
 
 // InsertUser adds a user to the database
 func (s *DatabaseAccessServer) InsertUser(ctx context.Context, in *pb.UserConfig) (*pb.InsertID, error) {
-	c := dbaccess.UserConfig{Username: in.Username, Password: in.Password}
-	i, err := s.DBAccesser.InsertUser(c)
+	conf := user.Config{Username: in.Username, Password: in.Password}
+	i, err := s.UserRepository.Save(conf)
 	if err != nil {
 		return &pb.InsertID{}, err
 	}
@@ -26,30 +30,29 @@ func (s *DatabaseAccessServer) InsertUser(ctx context.Context, in *pb.UserConfig
 
 // InsertFollower adds a follower (i.e., a unique pair between follower and followee UserIDs) into the database
 func (s *DatabaseAccessServer) InsertFollower(ctx context.Context, in *pb.Follower) (*pb.InsertID, error) {
-	f := dbaccess.Follower{FollowerUserID: in.FollowerUserID, FolloweeUserID: in.FolloweeUserID}
-	i, err := s.DBAccesser.InsertFollower(f)
+	f := follower.Follower{FollowerUserID: in.FollowerUserID, FolloweeUserID: in.FolloweeUserID}
+	insertID, err := s.FollowerRepository.Save(f)
 	if err != nil {
 		return &pb.InsertID{}, err
 	}
 
-	return &pb.InsertID{InsertID: string(i)}, nil
+	return &pb.InsertID{InsertID: insertID}, nil
 }
 
 // InsertTweet adds a tweet to the database
 func (s *DatabaseAccessServer) InsertTweet(ctx context.Context, in *pb.TweetConfig) (*pb.InsertID, error) {
-	c := dbaccess.TweetConfig{UserID: in.UserID, Username: in.Username, Text: in.Text}
-	i, err := s.DBAccesser.InsertTweet(c)
+	conf := tweet.Config{UserID: in.UserID, Username: in.Username, Text: in.Text}
+	insertID, err := s.TweetRepository.Save(conf)
 	if err != nil {
 		return &pb.InsertID{}, err
 	}
 
-	return &pb.InsertID{InsertID: string(i)}, nil
+	return &pb.InsertID{InsertID: insertID}, nil
 }
 
 // GetUser gets a user from the database given a UserID
 func (s *DatabaseAccessServer) GetUser(ctx context.Context, in *pb.UserID) (*pb.User, error) {
-	i := in.UserID
-	u, err := s.DBAccesser.GetUser(i)
+	u, err := s.UserRepository.FindByID(in.UserID)
 	if err != nil {
 		return &pb.User{}, err
 	}
@@ -63,7 +66,7 @@ func (s *DatabaseAccessServer) GetUser(ctx context.Context, in *pb.UserID) (*pb.
 
 // GetFollowers gets the followers of a user from the database given a UserID
 func (s *DatabaseAccessServer) GetFollowers(ctx context.Context, in *pb.UserID) (*pb.Followers, error) {
-	followers, err := s.DBAccesser.GetFollowers(in.UserID)
+	followers, err := s.FollowerRepository.FindByUserID(in.UserID)
 	if err != nil {
 		return &pb.Followers{}, err
 	}
@@ -81,7 +84,7 @@ func (s *DatabaseAccessServer) GetFollowers(ctx context.Context, in *pb.UserID) 
 
 // GetTweets gets the tweets of a user from the database given a UserID
 func (s *DatabaseAccessServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
-	tweets, err := s.DBAccesser.GetTweets(in.UserID)
+	tweets, err := s.TweetRepository.FindByUserID(in.UserID)
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
@@ -89,7 +92,7 @@ func (s *DatabaseAccessServer) GetTweets(ctx context.Context, in *pb.UserID) (*p
 	var pbTweets []*pb.Tweet
 	for _, t := range tweets {
 		pbTweets = append(pbTweets, &pb.Tweet{
-			TweetID:  t.ID,
+			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,
@@ -101,7 +104,7 @@ func (s *DatabaseAccessServer) GetTweets(ctx context.Context, in *pb.UserID) (*p
 
 // GetAllUsers gets all users from the database (only used by the Read View service on cold starts)
 func (s *DatabaseAccessServer) GetAllUsers(ctx context.Context, in *pb.GetAllUsersParam) (*pb.Users, error) {
-	users, err := s.DBAccesser.GetAllUsers()
+	users, err := s.UserRepository.FindAll()
 	if err != nil {
 		return &pb.Users{}, err
 	}
@@ -120,7 +123,7 @@ func (s *DatabaseAccessServer) GetAllUsers(ctx context.Context, in *pb.GetAllUse
 
 // GetAllFollowers gets all followers from the database (only used by the Read View service on cold starts)
 func (s *DatabaseAccessServer) GetAllFollowers(ctx context.Context, in *pb.GetAllFollowersParam) (*pb.Followers, error) {
-	followers, err := s.DBAccesser.GetAllFollowers()
+	followers, err := s.FollowerRepository.FindAll()
 	if err != nil {
 		return &pb.Followers{}, err
 	}
@@ -138,7 +141,7 @@ func (s *DatabaseAccessServer) GetAllFollowers(ctx context.Context, in *pb.GetAl
 
 // GetAllTweets gets all tweets from the database (only used by the Read View service on cold starts)
 func (s *DatabaseAccessServer) GetAllTweets(ctx context.Context, in *pb.GetAllTweetsParam) (*pb.Tweets, error) {
-	tweets, err := s.DBAccesser.GetAllTweets()
+	tweets, err := s.TweetRepository.FindAll()
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
@@ -146,7 +149,7 @@ func (s *DatabaseAccessServer) GetAllTweets(ctx context.Context, in *pb.GetAllTw
 	var pbTweets []*pb.Tweet
 	for _, t := range tweets {
 		pbTweets = append(pbTweets, &pb.Tweet{
-			TweetID:  t.ID,
+			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,

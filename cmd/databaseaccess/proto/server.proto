@@ -42,7 +42,7 @@ message TweetConfig {
 }
 
 message Tweet {
-  string TweetID = 1;
+  string ID = 1;
   string UserID = 2;
   string Username = 3;
   string Text = 4;
