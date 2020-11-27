@@ -13,3 +13,7 @@ run: # Example: `make run BIN=apigateway`
 	go run cmd/$(BIN)/internal/main.go
 build-and-run: # Example `make build-and-run BIN=apigateway`
 	make build BIN=$(BIN) && make run BIN=$(BIN)
+build-all:
+	for bin in apigateway eventproducer eventconsumer readview databaseaccess ; do \
+    make build BIN=$$bin ; \
+	done
