@@ -1,6 +1,6 @@
 # Summary
   - This is an API for a simple tweeting app I built with the following goals in mind:
-    - Familiarize myself with backend design principles, namely Event-Driven Architecture, CQRS, and Domain-Driven Design (see Design Feaatures below)
+    - Familiarize myself with backend design principles, namely Event-Driven Architecture, CQRS, and Domain-Driven Design (see Design Features below)
     - Learn to write effective and idiomatic Go
     - Learn to use new technologies, i.e., RabbitMQ and gRPC
   - Technologies Used:
