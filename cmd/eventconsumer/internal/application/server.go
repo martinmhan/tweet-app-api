@@ -4,34 +4,31 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/rpcclient"
 	"github.com/streadway/amqp"
+
+	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/tweet"
+	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/user"
 )
 
-// EventConsumer listens for and executes events from the message queue
-type EventConsumer struct {
-	MessageQueueHost string
-	MessageQueuePort string
-	MessageQueueName string
-	rpcclient.DatabaseAccess
-	rpcclient.ReadView
+// EventConsumerServer listens for and executes events from the message queue
+type EventConsumerServer struct {
+	Connection         *amqp.Connection
+	MessageQueueName   string
+	UserRepository     user.Repository
+	FollowerRepository follower.Repository
+	TweetRepository    tweet.Repository
 }
 
-func (e *EventConsumer) createUser(eventPayload []byte) error {
-	var uc rpcclient.UserConfig
+func (e *EventConsumerServer) createUser(eventPayload []byte) error {
+	var conf user.Config
 
-	err := json.Unmarshal(eventPayload, &uc)
+	err := json.Unmarshal(eventPayload, &conf)
 	if err != nil {
 		return err
 	}
 
-	id, err := e.InsertUser(uc) // creates user in db
-	if err != nil {
-		return err
-	}
-
-	u := rpcclient.User{ID: id, Username: uc.Username, Password: uc.Password}
-	err = e.AddUser(u) // adds created user to read view
+	_, err = e.UserRepository.Save(conf)
 	if err != nil {
 		return err
 	}
@@ -39,26 +36,15 @@ func (e *EventConsumer) createUser(eventPayload []byte) error {
 	return nil
 }
 
-func (e *EventConsumer) createTweet(eventPayload []byte) error {
-	var tc rpcclient.TweetConfig
+func (e *EventConsumerServer) createTweet(eventPayload []byte) error {
+	var conf tweet.Config
 
-	err := json.Unmarshal(eventPayload, &tc)
+	err := json.Unmarshal(eventPayload, &conf)
 	if err != nil {
 		return err
 	}
 
-	id, err := e.InsertTweet(tc) // creates user in db
-	if err != nil {
-		return err
-	}
-
-	tweet := rpcclient.Tweet{
-		TweetID:  id,
-		UserID:   tc.UserID,
-		Username: tc.Username,
-		Text:     tc.Text,
-	}
-	err = e.AddTweet(tweet) // adds created user to read view
+	_, err = e.TweetRepository.Save(conf)
 	if err != nil {
 		return err
 	}
@@ -66,25 +52,9 @@ func (e *EventConsumer) createTweet(eventPayload []byte) error {
 	return nil
 }
 
-func (e *EventConsumer) connect() (*amqp.Connection, error) {
-	url := "amqp://guest:guest@" + e.MessageQueueHost + ":" + e.MessageQueuePort + "/"
-	conn, err := amqp.Dial(url)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
-}
-
-// Init starts the EventConsumer so that it continually listens for new events to process from the message queue
-func (e *EventConsumer) Init() error {
-	conn, err := e.connect()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	ch, err := conn.Channel()
+// Listen starts the EventConsumerServer so that it continually listens for new events to process from the message queue
+func (e *EventConsumerServer) Listen() error {
+	ch, err := e.Connection.Channel()
 	if err != nil {
 		return err
 	}
