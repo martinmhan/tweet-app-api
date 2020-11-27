@@ -10,8 +10,13 @@ service ReadView {
   rpc addFollower(Follower) returns (SimpleResponse) {}
   rpc getUserByUsername(Username) returns(User) {}
   rpc getUserByUserID(UserID) returns (User) {}
+  rpc getFollowers(UserID) returns (Followers) {}
   rpc getTweets(UserID) returns (Tweets) {}
   rpc getTimeline(UserID) returns (Tweets) {}
+}
+
+message SimpleResponse {
+  string message = 1;
 }
 
 message User {
@@ -30,11 +35,15 @@ message UserID {
 
 message Follower {
   string FollowerUserID = 1;
-  string FollowsUserID = 2;
+  string FolloweeUserID = 2;
+}
+
+message Followers {
+  repeated Follower Followers = 1;
 }
 
 message Tweet {
-  string TweetID = 1;
+  string ID = 1;
   string UserID = 2;
   string Username = 3;
   string Text = 4;
@@ -42,8 +51,4 @@ message Tweet {
 
 message Tweets {
   repeated Tweet Tweets = 1;
-}
-
-message SimpleResponse {
-  string message = 1;
 }

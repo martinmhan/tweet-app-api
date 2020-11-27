@@ -3,20 +3,23 @@ package application
 import (
 	"context"
 
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/tweet"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/user"
 	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/infrastructure/datastore"
 	pb "github.com/martinmhan/tweet-app-api/cmd/readview/proto"
 )
 
 // ReadViewServer implements the gRPC ReadViewServer
 type ReadViewServer struct {
-	Datastore datastore.Datastore
 	pb.UnimplementedReadViewServer
+	Datastore datastore.Datastore
 }
 
 // AddUser adds a user to the ReadViewServer's  data store
 func (s *ReadViewServer) AddUser(ctx context.Context, in *pb.User) (*pb.SimpleResponse, error) {
-	u := datastore.User{
-		ID:       datastore.UserID(in.ID),
+	u := user.User{
+		ID:       user.ID(in.ID),
 		Username: in.Username,
 		Password: in.Password,
 	}
@@ -30,9 +33,9 @@ func (s *ReadViewServer) AddUser(ctx context.Context, in *pb.User) (*pb.SimpleRe
 
 // AddTweet adds a tweet to the ReadViewServer's data store
 func (s *ReadViewServer) AddTweet(ctx context.Context, in *pb.Tweet) (*pb.SimpleResponse, error) {
-	t := datastore.Tweet{
-		TweetID:  in.TweetID,
-		UserID:   datastore.UserID(in.UserID),
+	t := tweet.Tweet{
+		ID:       in.ID,
+		UserID:   user.ID(in.UserID),
 		Username: in.Username,
 		Text:     in.Text,
 	}
@@ -47,7 +50,11 @@ func (s *ReadViewServer) AddTweet(ctx context.Context, in *pb.Tweet) (*pb.Simple
 
 // AddFollower adds a user/follower pair to the ReadViewServer's data store
 func (s *ReadViewServer) AddFollower(ctx context.Context, in *pb.Follower) (*pb.SimpleResponse, error) {
-	err := s.Datastore.AddFollower(datastore.UserID(in.FollowerUserID), datastore.UserID(in.FollowsUserID))
+	f := follower.Follower{
+		FollowerUserID: user.ID(in.FollowerUserID),
+		FolloweeUserID: user.ID(in.FolloweeUserID),
+	}
+	err := s.Datastore.AddFollower(f)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to add follower to read view"}, err
 	}
@@ -57,7 +64,7 @@ func (s *ReadViewServer) AddFollower(ctx context.Context, in *pb.Follower) (*pb.
 
 // GetUserByUserID returns the user (if any) of the given UserID
 func (s *ReadViewServer) GetUserByUserID(ctx context.Context, in *pb.UserID) (*pb.User, error) {
-	u, err := s.Datastore.GetUserByUserID(datastore.UserID(in.UserID))
+	u, err := s.Datastore.GetUserByUserID(user.ID(in.UserID))
 	if err != nil {
 		return &pb.User{}, err
 	}
@@ -85,7 +92,7 @@ func (s *ReadViewServer) GetUserByUsername(ctx context.Context, in *pb.Username)
 
 // GetTweets returns the tweets of the given UserID
 func (s *ReadViewServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
-	tweets, err := s.Datastore.GetTweets(datastore.UserID(in.UserID))
+	tweets, err := s.Datastore.GetTweets(user.ID(in.UserID))
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
@@ -93,7 +100,7 @@ func (s *ReadViewServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Twee
 	pbTweets := []*pb.Tweet{}
 	for _, t := range tweets {
 		pbTweets = append(pbTweets, &pb.Tweet{
-			TweetID:  t.TweetID,
+			ID:       t.ID,
 			UserID:   string(t.UserID),
 			Username: t.Username,
 			Text:     t.Text,
@@ -105,7 +112,7 @@ func (s *ReadViewServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Twee
 
 // GetTimeline returns the tweets of users that the given UserID follows
 func (s *ReadViewServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
-	timeline, err := s.Datastore.GetTimeline(datastore.UserID(in.UserID))
+	timeline, err := s.Datastore.GetTimeline(user.ID(in.UserID))
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
@@ -113,7 +120,7 @@ func (s *ReadViewServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.Tw
 	pbTweets := []*pb.Tweet{}
 	for _, t := range timeline {
 		pbTweets = append(pbTweets, &pb.Tweet{
-			TweetID:  t.TweetID,
+			ID:       t.ID,
 			UserID:   string(t.UserID),
 			Username: t.Username,
 			Text:     t.Text,

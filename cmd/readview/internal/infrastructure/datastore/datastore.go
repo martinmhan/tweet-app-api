@@ -1,96 +1,75 @@
 package datastore
 
 import (
-	"context"
 	"errors"
 	"log"
-	"time"
 
-	"google.golang.org/grpc"
-
-	databaseaccesspb "github.com/martinmhan/tweet-app-api/cmd/databaseaccess/proto"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/tweet"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/user"
 )
 
 // Datastore is an in-memory object that stores a copy of all the data for this app
 type Datastore struct {
-	DatabaseAccessHost string
-	DatabaseAccessPort string
-	Users              map[UserID]UserConfig
-	Followers          map[UserID][]UserID
-	Tweets             map[UserID][]Tweet
+	UserRepository     user.Repository
+	FollowerRepository follower.Repository
+	TweetRepository    tweet.Repository
+
+	Users     map[user.ID]user.Config
+	Followers map[user.ID][]user.ID
+	Tweets    map[user.ID][]tweet.Tweet
 }
 
 // Initialize populates the in-memory data store by fetching data via the Database Access service (only called when the server starts)
 func (ds *Datastore) Initialize() error {
 	log.Println("Initializing data store")
 
-	target := ds.DatabaseAccessHost + ":" + ds.DatabaseAccessPort
-	ctx, cancel := context.WithTimeout(context.TODO(), 1000*time.Millisecond)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
+	users, err := ds.UserRepository.FindAll()
+	if err != nil {
+		return err
+	}
+	followers, err := ds.FollowerRepository.FindAll()
+	if err != nil {
+		return err
+	}
+	tweets, err := ds.TweetRepository.FindAll()
 	if err != nil {
 		return err
 	}
 
-	defer conn.Close()
-
-	client := databaseaccesspb.NewDatabaseAccessClient(conn)
-
-	users, err := client.GetAllUsers(context.TODO(), &databaseaccesspb.GetAllUsersParam{})
-	if err != nil {
-		return err
-	}
-	followers, err := client.GetAllFollowers(context.TODO(), &databaseaccesspb.GetAllFollowersParam{})
-	if err != nil {
-		return err
-	}
-	tweets, err := client.GetAllTweets(context.TODO(), &databaseaccesspb.GetAllTweetsParam{})
-	if err != nil {
-		return err
-	}
-
-	for _, u := range users.Users {
-		ds.Users[UserID(u.ID)] = UserConfig{
+	for _, u := range users {
+		ds.Users[u.ID] = user.Config{
 			Username: u.Username,
 			Password: u.Password,
 		}
 	}
 
-	for _, f := range followers.Followers {
-		userID := UserID(f.FolloweeUserID)
-		followerID := UserID(f.FollowerUserID)
+	for _, f := range followers {
+		userID := f.FolloweeUserID
+		followerID := f.FollowerUserID
 
 		_, ok := ds.Followers[userID]
 		if !ok {
-			ds.Followers[userID] = []UserID{}
+			ds.Followers[userID] = []user.ID{}
 		}
 
 		ds.Followers[userID] = append(ds.Followers[userID], followerID)
 	}
 
-	for _, t := range tweets.Tweets {
-		userID := UserID(t.UserID)
-		tweet := Tweet{
-			TweetID:  t.TweetID,
-			UserID:   UserID(t.UserID),
-			Username: t.Username,
-			Text:     t.Text,
-		}
-
-		_, ok := ds.Tweets[userID]
+	for _, t := range tweets {
+		_, ok := ds.Tweets[t.UserID]
 		if !ok {
-			ds.Tweets[userID] = []Tweet{}
+			ds.Tweets[t.UserID] = []tweet.Tweet{}
 		}
 
-		ds.Tweets[userID] = append(ds.Tweets[userID], tweet)
+		ds.Tweets[t.UserID] = append(ds.Tweets[t.UserID], t)
 	}
 
 	return nil
 }
 
 // AddUser adds a user to the datastore
-func (ds *Datastore) AddUser(u User) error {
+func (ds *Datastore) AddUser(u user.User) error {
 	if u.ID == "" || u.Username == "" {
 		return errors.New("Invalid user")
 	}
@@ -100,20 +79,20 @@ func (ds *Datastore) AddUser(u User) error {
 		return errors.New("User already exists")
 	}
 
-	ds.Users[u.ID] = UserConfig{Username: u.Username, Password: u.Password}
+	ds.Users[u.ID] = user.Config{Username: u.Username, Password: u.Password}
 
 	return nil
 }
 
 // AddTweet adds a tweets to the datastore
-func (ds *Datastore) AddTweet(t Tweet) error {
-	if t.TweetID == "" || t.UserID == "" || t.Username == "" || t.Text == "" {
+func (ds *Datastore) AddTweet(t tweet.Tweet) error {
+	if t.ID == "" || t.UserID == "" || t.Username == "" || t.Text == "" {
 		return errors.New("Invalid tweet")
 	}
 
 	tweets, ok := ds.Tweets[t.UserID]
 	if !ok {
-		tweets = []Tweet{}
+		tweets = []tweet.Tweet{}
 	}
 
 	ds.Tweets[t.UserID] = append(tweets, t)
@@ -122,29 +101,29 @@ func (ds *Datastore) AddTweet(t Tweet) error {
 }
 
 // AddFollower adds a follower to the datastore
-func (ds *Datastore) AddFollower(followerUserID UserID, followsUserID UserID) error {
-	if followerUserID == "" || followsUserID == "" {
+func (ds *Datastore) AddFollower(f follower.Follower) error {
+	if f.FollowerUserID == "" || f.FolloweeUserID == "" {
 		return errors.New("Invalid userID(s)")
 	}
 
-	followers, ok := ds.Followers[followsUserID]
+	followers, ok := ds.Followers[f.FolloweeUserID]
 	if !ok {
-		followers = []UserID{}
+		followers = []user.ID{}
 	}
 
-	ds.Followers[followsUserID] = append(followers, followerUserID)
+	ds.Followers[f.FolloweeUserID] = append(followers, f.FollowerUserID)
 
 	return nil
 }
 
 // GetUserByUserID TO DO
-func (ds *Datastore) GetUserByUserID(uid UserID) (User, error) {
+func (ds *Datastore) GetUserByUserID(uid user.ID) (user.User, error) {
 	u, ok := ds.Users[uid]
 	if !ok {
-		return User{}, errors.New("Invalid UserID")
+		return user.User{}, errors.New("Invalid UserID")
 	}
 
-	return User{
+	return user.User{
 		ID:       uid,
 		Username: u.Username,
 		Password: u.Password,
@@ -152,10 +131,10 @@ func (ds *Datastore) GetUserByUserID(uid UserID) (User, error) {
 }
 
 // GetUserByUsername TO DO
-func (ds *Datastore) GetUserByUsername(username string) (User, error) {
+func (ds *Datastore) GetUserByUsername(username string) (user.User, error) {
 	for uid, u := range ds.Users {
 		if u.Username == username {
-			return User{
+			return user.User{
 				ID:       uid,
 				Username: u.Username,
 				Password: u.Password,
@@ -163,55 +142,31 @@ func (ds *Datastore) GetUserByUsername(username string) (User, error) {
 		}
 	}
 
-	return User{}, nil
+	return user.User{}, errors.New("User does not exist")
 }
 
 // GetTweets TO DO
-func (ds *Datastore) GetTweets(uid UserID) ([]Tweet, error) {
+func (ds *Datastore) GetTweets(uid user.ID) ([]tweet.Tweet, error) {
 	tweets, ok := ds.Tweets[uid]
 	if !ok {
-		return []Tweet{}, nil
+		return []tweet.Tweet{}, nil
 	}
 
 	return tweets, nil
 }
 
 // GetTimeline TO DO
-func (ds *Datastore) GetTimeline(uid UserID) ([]Tweet, error) {
+func (ds *Datastore) GetTimeline(uid user.ID) ([]tweet.Tweet, error) {
 	followers, ok := ds.Followers[uid]
 	if !ok {
-		return []Tweet{}, nil
+		return []tweet.Tweet{}, nil
 	}
 
-	var timeline []Tweet
+	var timeline []tweet.Tweet
 	for _, fid := range followers {
 		tweets := ds.Tweets[fid]
 		timeline = append(timeline, tweets...)
 	}
 
 	return timeline, nil
-}
-
-// User TO DO
-type User struct {
-	ID       UserID
-	Username string
-	Password string
-}
-
-// UserID TO DO
-type UserID string
-
-// UserConfig TO DO
-type UserConfig struct {
-	Username string
-	Password string
-}
-
-// Tweet TO DO
-type Tweet struct {
-	TweetID  string
-	UserID   UserID
-	Username string
-	Text     string
 }
