@@ -10,7 +10,7 @@
   - Run MongoDB and RabbitMQ daemons:
     - In MacOS, something like `brew services start mongodb` and `brew services start rabbitmq`
   - Create MongoDB database:
-    - In a terminal window, navigate to the /db directory and run the upgrade.sh script
+    - In a terminal window, navigate to the /scripts/db directory and run `upgrade.sh`
   - Build and run services:
     - To run services locally, open a terminal window and run the `build-and-run` Makefile script for each service (e.g., `make build-and-run BIN=eventproducer`)
     - Services must be started in the following order to avoid fatal connection errors: 1) databaseaccess, 2) readview, 3) eventconsumer, 4) eventproducer, 5) apigateway
@@ -28,17 +28,16 @@
     - Writes are done via the queue
       - The Events Producer publishes a write event to the message queue
       - The Events Consumer subscribes to and processes the write event
-  - [Domain Driven Design](https://en.wikipedia.org/wiki/Domain-driven_design) (DDD):
-    - Each microservice uses folder structure and abstraction layers to follow DDD principles
-      - (see `/cmd/internal/` Project Structure notes below)
-    - The overall architecture utilizes microservices to separate contexts and functionality:
-      - (see API architecture diagram below)
   - [Remote Procedure Call](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC):
     - gRPC used for direct communication with the UI and between services
       - The only exception being the Events Producer and Events Consumer, which communicate via the Message Queue
       - This allows for flexibility to handle UI requests either synchronously or asynchronously
         - Reads are completed and provided synchronously in the gRPC response
         - Writes are completed asynchronously via the message queue
+  <!-- - [Domain Driven Design](https://en.wikipedia.org/wiki/Domain-driven_design) (DDD): ### TBD ###
+  - This API follows DDD principles in two levels:
+    - The overall architecture utilizes microservices to separate contexts and functionality (see API architecture diagram below)
+    - Each microservice uses folder structure to separate abstraction layers (see `/cmd/internal/` Project Structure notes below) -->
 
 # Notes:
   - Project Structure
@@ -64,3 +63,4 @@
   - https://golang.org/doc/effective_go.html
   - https://github.com/golang-standards/project-layout
   - https://github.com/vardius/go-api-boilerplate
+  - https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice
