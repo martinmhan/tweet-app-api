@@ -6,21 +6,22 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/martinmhan/tweet-app-api/cmd/eventproducer/internal/application"
-	"github.com/martinmhan/tweet-app-api/cmd/eventproducer/internal/domain/event"
-	pb "github.com/martinmhan/tweet-app-api/cmd/eventproducer/proto"
-
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
+
+	"github.com/martinmhan/tweet-app-api/cmd/eventproducer/internal/application"
+	"github.com/martinmhan/tweet-app-api/cmd/eventproducer/internal/infrastructure/eventproducer"
+	pb "github.com/martinmhan/tweet-app-api/cmd/eventproducer/proto"
 )
 
 func main() {
 	godotenv.Load()
 
 	port := os.Getenv("EP_PORT")
-	mqhost := os.Getenv("MQ_HOST")
-	mqport := os.Getenv("MQ_PORT")
-	mqname := os.Getenv("MQ_NAME")
-	if port == "" || mqport == "" || mqhost == "" || mqname == "" {
+	mqHost := os.Getenv("MQ_HOST")
+	mqPort := os.Getenv("MQ_PORT")
+	mqName := os.Getenv("MQ_NAME")
+	if port == "" || mqPort == "" || mqHost == "" || mqName == "" {
 		log.Fatal("Missing environment variable(s). Please edit .env file")
 	}
 
@@ -29,18 +30,20 @@ func main() {
 		log.Fatal("Event Producer failed to listen: ", err)
 	}
 
-	p := event.Producer{
-		MessageQueueHost: mqhost,
-		MessageQueuePort: mqport,
-		MessageQueueName: mqname,
-	}
-	err = p.Connect()
+	url := "amqp://guest:guest@" + mqHost + ":" + mqPort + "/"
+	conn, err := amqp.Dial(url)
 	if err != nil {
-		log.Fatal("Event Producer failed to connect: ", err)
+		log.Fatal("Failed to connect to RabbitMQ")
 	}
-	defer p.Disconnect()
 
-	s := &application.EventProducerServer{Producer: p}
+	defer conn.Close()
+
+	ep := eventproducer.EventProducer{
+		MessageQueueName: mqName,
+		Connection:       conn,
+	}
+
+	s := &application.EventProducerServer{Producer: &ep}
 	g := grpc.NewServer()
 	pb.RegisterEventProducerServer(g, s)
 
