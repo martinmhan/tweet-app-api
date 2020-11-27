@@ -6,20 +6,14 @@ type Config struct {
 	Password string
 }
 
-// Create TO DO
-func Create(c Config) error {
-	// TO DO
-	return nil
-}
-
-// User represents an existing user
+// A User represents an existing user
 type User struct {
 	ID       string
 	Username string
 	Password string
 }
 
-// Repository TO DO
+// Repository interface for fetching users
 type Repository interface {
 	FindById(UserID string) (User, error)
 	FindByUsername(Username string) (User, error)
