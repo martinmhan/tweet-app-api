@@ -1,19 +1,10 @@
 # Summary
-  - This is an API for a simple tweeting app I built with the following learning goals in mind:
-    - Familiarize myself firsthand with design principles, namely Event-Driven Architecture, CQRS, and Domain-Driven Design (see Design Features below)
-    - Learn to write effective and idiomatic Go
-    - Learn to use new technologies, i.e., RabbitMQ and gRPC
-  - App functionality (backend only)
-    - Create a user
-    - Create a tweet
-    - Follow other users to see their tweets
-  - Technologies Used: Go, gRPC, RabbitMQ, MongoDB
-  - TBD: Swift iOS frontend
+This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with new architectural design principles (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is simple - you can create a user, log in, create a tweet, and follow other users to view their tweet. However, I wanted to practice designing an efficient backend system all the while learning to write idiomatic Go. Technologies used include: Go, gRPC, RabbitMQ, and MongoDB.
 
 # Design Features:
-  - [Event Driven Architecture](https://en.wikipedia.org/wiki/Event-driven_architecture) (EDA)
+  - [Event Driven Architecture (EDA)](https://en.wikipedia.org/wiki/Event-driven_architecture)
     - Message-Queue used to produce/consume state-changing events (in this case, database writes)
-  - [Command Query Responsibility Segregation](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs) (CQRS):
+  - [Command Query Responsibility Segregation (CQRS)](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs):
     - This API handles read and write requests separately to optimize reads and prevent blocking of writes
     - Reads are done via a Read View service:
       - This is an in-memory data store
@@ -22,23 +13,23 @@
     - Writes are done via the queue
       - The Event Producer publishes a write event to the message queue
       - The Event Consumer executes the write event (i.e., writes to DB, then updates read view)
-  - [Remote Procedure Call](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC):
+  - [Remote Procedure Call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call):
     - gRPC used for direct communication with the UI and between services
       - The only exception being the Events Producer and Events Consumer, which communicate via the Message Queue
       - This allows for flexibility to handle UI requests either synchronously or asynchronously
         - Reads are completed and provided synchronously in the gRPC response
         - Writes are completed asynchronously via the message queue
-  - [Domain Driven Design](https://en.wikipedia.org/wiki/Domain-driven_design) (DDD):
+  - [Domain Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design):
     - Each microservice uses folder structure to separate logic into the following layers:
-        - Application: In this layer, I define the route handlers which in gRPC are the methods that a gRPC client is able to call. These handlers utilize interfaces from the Domain and are not exposed to their implementations under the hood.
-        - Domain: In this layer, I define my domain objects (i.e., User, Follow, and Tweet) and their respective Repository interfaces (if needed by the service). The Repository Pattern used by DDD basically utilizes repository objects to abstract the getting/saving of domain objects.
-        - Infrastructure: In this layer, I implement the repositories, so this is where I define the getting/saving functions. Note the implementations will differ by service, but will do one of the following:
-          - make a request to the database and/or read view to fetch domain objects
-          - make a request to the database and/or read view to save domain objects
+        - In the Application layer, I define the route handlers, i.e., the gRPC methods that a client is able to call. These handlers utilize domain objects and interfaces, but are not exposed to their implementation details.
+        - In the Domain layer, I define the domain objects (i.e., User, Follow, and Tweet) and their respective repository interfaces (if needed by the service). The Repository Pattern used by DDD is a means of abstracting the getting/saving of domain objects by utilizing repository objects.
+        - In the Infrastructure layer, I implement the repositories, i.e., define the getting/saving functions. Please note the implementations will differ by service, but will do one of the following:
+          - make a request to the database and/or Read View service to fetch domain objects
+          - make a request to the database and/or Read View to save domain objects
           - produce an event that will save domain objects
-  - [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection):
-    - Objects that depend on other objects use interface parameters for instantiation instead of constructing those dependencies themselves. This allows for greater separation of concerns as the dependent object is not aware of the underlying logic of how these dependencies work.
-    - For example, the EventProducerServer (`cmd/eventproducer/internal/application/server.go`) takes in a `event.Producer` interface. The server object only knows that this injection will have a `Produce(Event)` method, not how the injection will later be implemented. This pattern is used throughout this API.
+  - [Dependency Injection (DI)](https://en.wikipedia.org/wiki/Dependency_injection):
+    - The servers in this mono-repo depend on other objects (e.g., repositories, event producers) to handle their routes. Instead of the servers constructing those objects themselves, they only possess interfaces of those objects and receive the implementations when instantiated. This allows for greater separation of concerns.
+    - For example, the EventProducerServer (`cmd/eventproducer/internal/application/server.go`) takes in an `event.Producer` interface. The server object only knows that this injection will have a `Produce(Event)` method - the actual implementation is injected in `main.go` when the server starts.
 
 # Notes:
   - Project Structure
