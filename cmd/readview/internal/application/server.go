@@ -48,8 +48,8 @@ func (s *ReadViewServer) AddTweet(ctx context.Context, in *pb.Tweet) (*pb.Simple
 	return &pb.SimpleResponse{Message: "Successfully added tweet to read view"}, nil
 }
 
-// AddFollower adds a user/follower pair to the ReadViewServer's data store
-func (s *ReadViewServer) AddFollower(ctx context.Context, in *pb.Follow) (*pb.SimpleResponse, error) {
+// AddFollow adds a user/follower pair to the ReadViewServer's data store
+func (s *ReadViewServer) AddFollow(ctx context.Context, in *pb.Follow) (*pb.SimpleResponse, error) {
 	f := follow.Follow{
 		FollowerUserID:   user.ID(in.FollowerUserID),
 		FollowerUsername: in.FollowerUsername,
@@ -90,6 +90,46 @@ func (s *ReadViewServer) GetUserByUsername(ctx context.Context, in *pb.Username)
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
+}
+
+// GetFollowers TO DO
+func (s *ReadViewServer) GetFollowers(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+	followers, err := s.Datastore.GetFollowers(user.ID(in.UserID))
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	var pbFollows pb.Follows
+	for _, f := range followers {
+		pbFollows.Follows = append(pbFollows.Follows, &pb.Follow{
+			FollowerUserID:   string(f.FollowerUserID),
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   string(f.FolloweeUserID),
+			FolloweeUsername: f.FolloweeUsername,
+		})
+	}
+
+	return &pbFollows, nil
+}
+
+// GetFollowees TO DO
+func (s *ReadViewServer) GetFollowees(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+	followees, err := s.Datastore.GetFollowees(user.ID(in.UserID))
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	var pbFollows pb.Follows
+	for _, f := range followees {
+		pbFollows.Follows = append(pbFollows.Follows, &pb.Follow{
+			FollowerUserID:   string(f.FollowerUserID),
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   string(f.FolloweeUserID),
+			FolloweeUsername: f.FolloweeUsername,
+		})
+	}
+
+	return &pbFollows, nil
 }
 
 // GetTweets returns the tweets of the given UserID

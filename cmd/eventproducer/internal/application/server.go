@@ -15,11 +15,7 @@ type EventProducerServer struct {
 
 // ProduceUserCreation publishes a UserCreation event to the message queue
 func (s *EventProducerServer) ProduceUserCreation(ctx context.Context, in *pb.UserConfig) (*pb.SimpleResponse, error) {
-	e := event.Event{
-		Type:    event.UserCreation,
-		Payload: in,
-	}
-
+	e := event.Event{Type: event.UserCreation, Payload: in}
 	err := s.Produce(e)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "User creation failed"}, err
@@ -30,11 +26,7 @@ func (s *EventProducerServer) ProduceUserCreation(ctx context.Context, in *pb.Us
 
 // ProduceTweetCreation publishes a TweetCreation event to the message queue
 func (s *EventProducerServer) ProduceTweetCreation(ctx context.Context, in *pb.TweetConfig) (*pb.SimpleResponse, error) {
-	e := event.Event{
-		Type:    event.TweetCreation,
-		Payload: in,
-	}
-
+	e := event.Event{Type: event.TweetCreation, Payload: in}
 	err := s.Produce(e)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Tweet creation failed"}, err
@@ -44,12 +36,8 @@ func (s *EventProducerServer) ProduceTweetCreation(ctx context.Context, in *pb.T
 }
 
 // ProduceFollowCreation publishes a FollowCreation event to the message queue
-func (s *EventProducerServer) ProduceFollowCreation(ctx context.Context, in *pb.Follow) (*pb.SimpleResponse, error) {
-	e := event.Event{
-		Type:    event.FollowCreation,
-		Payload: in,
-	}
-
+func (s *EventProducerServer) ProduceFollowCreation(ctx context.Context, in *pb.FollowConfig) (*pb.SimpleResponse, error) {
+	e := event.Event{Type: event.FollowCreation, Payload: in}
 	err := s.Produce(e)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Follow creation failed"}, err

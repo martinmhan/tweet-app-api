@@ -7,9 +7,9 @@ option go_package = "github.com/martinmhan/tweet-app-api/cmd/readview/proto";
 service ReadView {
   rpc addUser(User) returns (SimpleResponse) {}
   rpc addTweet(Tweet) returns (SimpleResponse) {}
-  rpc addFollower(Follow) returns (SimpleResponse) {}
-  rpc getUserByUsername(Username) returns(User) {}
+  rpc addFollow(Follow) returns (SimpleResponse) {}
   rpc getUserByUserID(UserID) returns (User) {}
+  rpc getUserByUsername(Username) returns(User) {}
   rpc getFollowers(UserID) returns (Follows) {}
   rpc getFollowees(UserID) returns (Follows) {}
   rpc getTweets(UserID) returns (Tweets) {}

@@ -7,7 +7,7 @@ option go_package = "github.com/martinmhan/tweet-app-api/cmd/eventproducer/proto
 service EventProducer {
   rpc produceUserCreation(UserConfig) returns(SimpleResponse) {}
   rpc produceTweetCreation(TweetConfig) returns(SimpleResponse) {}
-  rpc produceFollowCreation(Follow) returns(SimpleResponse) {}
+  rpc produceFollowCreation(FollowConfig) returns(SimpleResponse) {}
 }
 
 message UserConfig {
@@ -17,15 +17,12 @@ message UserConfig {
 
 message TweetConfig {
   string UserID = 1;
-  string Username = 2;
-  string Text = 3;
+  string Text = 2;
 }
 
-message Follow {
+message FollowConfig {
   string FollowerUserID = 1;
-  string FollowerUsername = 2;
-  string FolloweeUserID = 3;
-  string FolloweeUsername = 4;
+  string FolloweeUserID = 2;
 }
 
 message SimpleResponse {
