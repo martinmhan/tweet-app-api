@@ -17,7 +17,7 @@ if (!dbNames.includes(dbName)) {
           properties: {
             username: {
               bsonType: 'string',
-              minLength: 8,
+              minLength: 6,
               maxLength: 30,
               description: 'is required and must be a string with length between 8 and 30',
             },
@@ -34,20 +34,28 @@ if (!dbNames.includes(dbName)) {
   );
 
   db.createCollection(
-    'followers',
+    'follows',
     {
       validator: {
         $jsonSchema: {
           bsonType: 'object',
-          required: ['followerUserID', 'followeeUserID'],
+          required: ['followerUserID', 'followerUsername', 'followeeUserID', 'followeeUsername'],
           properties: {
             followerUserID: {
               bsonType: 'string',
               description: 'user ID of the follower; references the _id of a user in the "users" collection',
             },
+            followerUsername: {
+              bsonType: 'string',
+              description: 'username of the follower; references the username of a user in the "users" collection',
+            },
             followeeUserID: {
               bsonType: 'string',
               description: 'user ID of the person being followed; references the _id of a user in the "users" collection',
+            },
+            followeeUsername: {
+              bsonType: 'string',
+              description: 'username of the followee; references the username of a user in the "users" collection',
             },
           },
         },
