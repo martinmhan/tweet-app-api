@@ -8,6 +8,12 @@ type Follow struct {
 	FolloweeUsername string
 }
 
+// Config contains the fields necessary to create a follow
+type Config struct {
+	FollowerUserID string
+	FolloweeUserID string
+}
+
 // Repository interface for fetching users' followers
 type Repository interface {
 	FindFollowersByUserID(userID string) ([]Follow, error)

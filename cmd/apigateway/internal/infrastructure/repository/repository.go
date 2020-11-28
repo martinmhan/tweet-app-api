@@ -58,8 +58,13 @@ func (tr *TweetRepository) FindByUserID(userID string) ([]tweet.Tweet, error) {
 	}
 
 	tweets := []tweet.Tweet{}
-	for i, t := range pbtweets.Tweets {
-		tweets[i] = tweet.Tweet{UserID: t.UserID, Text: t.Text}
+	for _, t := range pbtweets.Tweets {
+		tweets = append(tweets, tweet.Tweet{
+			ID:       t.ID,
+			UserID:   t.UserID,
+			Username: t.Username,
+			Text:     t.Text,
+		})
 	}
 
 	return tweets, nil
@@ -74,12 +79,12 @@ func (tr *TweetRepository) FindTimelineByUserID(userID string) ([]tweet.Tweet, e
 	}
 
 	tweets := []tweet.Tweet{}
-	for i, t := range pbtweets.Tweets {
-		tweets[i] = tweet.Tweet{
+	for _, t := range pbtweets.Tweets {
+		tweets = append(tweets, tweet.Tweet{
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,
-		}
+		})
 	}
 
 	return tweets, nil
@@ -99,13 +104,13 @@ func (fr *FollowRepository) FindFollowersByUserID(userID string) ([]follow.Follo
 	}
 
 	followers := []follow.Follow{}
-	for i, f := range pbFollows.Follows {
-		followers[i] = follow.Follow{
+	for _, f := range pbFollows.Follows {
+		followers = append(followers, follow.Follow{
 			FollowerUserID:   f.FollowerUserID,
 			FollowerUsername: f.FollowerUsername,
 			FolloweeUserID:   f.FolloweeUserID,
 			FolloweeUsername: f.FolloweeUsername,
-		}
+		})
 	}
 
 	return followers, nil
@@ -120,13 +125,13 @@ func (fr *FollowRepository) FindFolloweesByUserID(userID string) ([]follow.Follo
 	}
 
 	followees := []follow.Follow{}
-	for i, f := range pbFollows.Follows {
-		followees[i] = follow.Follow{
+	for _, f := range pbFollows.Follows {
+		followees = append(followees, follow.Follow{
 			FollowerUserID:   f.FollowerUserID,
 			FollowerUsername: f.FollowerUsername,
 			FolloweeUserID:   f.FolloweeUserID,
 			FolloweeUsername: f.FolloweeUsername,
-		}
+		})
 	}
 
 	return followees, nil

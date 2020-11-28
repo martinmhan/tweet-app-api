@@ -1,14 +1,14 @@
 package user
 
-// Config contains the fields necessary to create a user
-type Config struct {
+// A User represents an existing user
+type User struct {
+	ID       string
 	Username string
 	Password string
 }
 
-// A User represents an existing user
-type User struct {
-	ID       string
+// Config contains the fields necessary to create a user
+type Config struct {
 	Username string
 	Password string
 }

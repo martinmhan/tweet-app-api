@@ -25,7 +25,7 @@ type APIGatewayServer struct {
 }
 
 // LoginUser provides a JWT given a valid username/password
-func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.User) (*pb.JWT, error) {
+func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.UserConfig) (*pb.JWT, error) {
 	valid, err := s.ValidatePassword(in.Username, in.Password)
 	if err != nil {
 		return nil, err
@@ -44,14 +44,14 @@ func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.User) (*pb.JWT,
 }
 
 // CreateUser validates the new username, then calls the event producer to publish a CreateUser event and responds to the initial gRPC
-func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.User) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.UserConfig) (*pb.SimpleResponse, error) {
 	valid, err := s.ValidateUsername(in.Username)
 	if err != nil {
 		return nil, err
 	}
 
 	if !valid {
-		return &pb.SimpleResponse{Message: "Username already exists"}, errors.New("Failed to create new user")
+		return &pb.SimpleResponse{Message: "Username already exists"}, errors.New("Failed to create new user: Username already exists")
 	}
 
 	c := user.Config{Username: in.Username, Password: in.Password}
@@ -63,7 +63,7 @@ func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.User) (*pb.Sim
 }
 
 // CreateTweet calls the event producer to create a new tweet, then responds to the initial gRPC
-func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.TweetText) (*pb.SimpleResponse, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find metadata headers from context")
@@ -78,8 +78,8 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.S
 	claims := token.Claims.(*auth.JWTClaims)
 	userID := claims.UserID
 
-	c := tweet.Config{UserID: userID, Username: in.Username, Text: in.Text}
-	err = s.ProduceTweetCreation(c)
+	c := tweet.Config{UserID: userID, Text: in.TweetText}
+	err = s.ProduceTweetCreation(c) // TO DO - update tweet creation consumer *_*_*
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to create tweet"}, err
 	}
@@ -88,7 +88,7 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.S
 }
 
 // CreateFollow calls the event producer to make the current user a follower of the given UserID
-func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.UserID) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.FolloweeUserID) (*pb.SimpleResponse, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find metadata headers from context")
@@ -102,11 +102,9 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.UserID) (*pb
 
 	claims := token.Claims.(*auth.JWTClaims)
 	currentUserID := claims.UserID
-	currentUsername := claims.Username
-
-	followeeUserID := in.UserID
+	followeeUserID := in.FolloweeUserID
 	if currentUserID == followeeUserID {
-		return &pb.SimpleResponse{Message: "A user cannot follow him/her self"}, errors.New("Failed to follow user")
+		return &pb.SimpleResponse{Message: "A user cannot follow him/her self"}, errors.New("Failed to follow user: cannot follow yourself")
 	}
 
 	followee, err := s.UserRepository.FindByID(followeeUserID)
@@ -114,11 +112,11 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.UserID) (*pb
 		return &pb.SimpleResponse{Message: "Invalid UserID"}, errors.New("Failed to follow user : Invalid UserID")
 	}
 
-	f := follow.Follow{
-		FollowerUserID:   currentUserID,
-		FollowerUsername: currentUsername,
-		FolloweeUserID:   followeeUserID,
-		FolloweeUsername: followee.Username,
+	// *_*_*_* TO DO check if already following
+
+	f := follow.Config{
+		FollowerUserID: currentUserID,
+		FolloweeUserID: followeeUserID,
 	}
 	err = s.ProduceFollowCreation(f)
 	if err != nil {
@@ -129,7 +127,7 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.UserID) (*pb
 }
 
 // GetFollowers returns the followers of a given UserID
-func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.GetFollowersParam) (*pb.Follows, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
@@ -150,20 +148,20 @@ func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.UserID) (*pb
 	}
 
 	var pbFollows pb.Follows
-	for i, f := range followers {
-		pbFollows.Follows[i] = &pb.Follow{
+	for _, f := range followers {
+		pbFollows.Follows = append(pbFollows.Follows, &pb.Follow{
 			FollowerUserID:   f.FollowerUserID,
 			FollowerUsername: f.FollowerUsername,
 			FolloweeUserID:   f.FolloweeUserID,
 			FolloweeUsername: f.FolloweeUsername,
-		}
+		})
 	}
 
 	return &pbFollows, nil
 }
 
 // GetFollowees returns the followees of a given UserID (i.e., users that the user follows)
-func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.GetFolloweesParam) (*pb.Follows, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
@@ -184,20 +182,20 @@ func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.UserID) (*pb
 	}
 
 	var pbFollows pb.Follows
-	for i, f := range followees {
-		pbFollows.Follows[i] = &pb.Follow{
+	for _, f := range followees {
+		pbFollows.Follows = append(pbFollows.Follows, &pb.Follow{
 			FollowerUserID:   f.FollowerUserID,
 			FollowerUsername: f.FollowerUsername,
 			FolloweeUserID:   f.FolloweeUserID,
 			FolloweeUsername: f.FolloweeUsername,
-		}
+		})
 	}
 
 	return &pbFollows, nil
 }
 
 // GetTweets returns the tweets created by a given UserID
-func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
+func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Tweets{}, errors.New("Failed to find metadata headers from context")
@@ -210,30 +208,27 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.UserID) (*pb.Tw
 	}
 
 	claims := token.Claims.(*auth.JWTClaims)
-	if claims.UserID != in.UserID {
-		return &pb.Tweets{}, errors.New("Unauthorized")
-	}
 
-	tweets, err := s.TweetRepository.FindByUserID(in.UserID)
+	tweets, err := s.TweetRepository.FindByUserID(claims.UserID)
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
 
 	var pbTweets pb.Tweets
-	for i, t := range tweets {
-		pbTweets.Tweets[i] = &pb.Tweet{
+	for _, t := range tweets {
+		pbTweets.Tweets = append(pbTweets.Tweets, &pb.Tweet{
 			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,
-		}
+		})
 	}
 
 	return &pbTweets, nil
 }
 
 // GetTimeline returns the timeline (i.e., tweets of users that this user follows) of a given UserID
-func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.Tweets, error) {
+func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.GetTimelineParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Tweets{}, errors.New("Failed to find metadata headers from context")
@@ -246,23 +241,20 @@ func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.UserID) (*pb.
 	}
 
 	claims := token.Claims.(*auth.JWTClaims)
-	if claims.UserID != in.UserID {
-		return &pb.Tweets{}, errors.New("Unauthorized")
-	}
 
-	tweets, err := s.TweetRepository.FindByUserID(in.UserID)
+	tweets, err := s.TweetRepository.FindTimelineByUserID(claims.UserID)
 	if err != nil {
 		return &pb.Tweets{}, err
 	}
 
 	var pbTweets pb.Tweets
-	for i, t := range tweets {
-		pbTweets.Tweets[i] = &pb.Tweet{
+	for _, t := range tweets {
+		pbTweets.Tweets = append(pbTweets.Tweets, &pb.Tweet{
 			ID:       t.ID,
 			UserID:   t.UserID,
 			Username: t.Username,
 			Text:     t.Text,
-		}
+		})
 	}
 
 	return &pbTweets, nil

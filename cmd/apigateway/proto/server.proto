@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-package gateway;
+package apigateway;
 
 option go_package = "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto";
 
 service APIGateway {
-  rpc loginUser(User) returns (JWT) {}
-  rpc createUser(User) returns (SimpleResponse) {}
-  rpc createFollow(UserID) returns(SimpleResponse) {}
-  rpc createTweet(Tweet) returns(SimpleResponse) {}
-  rpc getFollowers(UserID) returns(Follows) {}
-  rpc getFollowees(UserID) returns(Follows) {}
-  rpc getTweets(UserID) returns(Tweets) {}
-  rpc getTimeline(UserID) returns(Tweets) {}
+  rpc loginUser(UserConfig) returns (JWT) {}
+  rpc createUser(UserConfig) returns (SimpleResponse) {}
+  rpc createFollow(FolloweeUserID) returns(SimpleResponse) {}
+  rpc createTweet(TweetText) returns(SimpleResponse) {}
+  rpc getFollowers(GetFollowersParam) returns(Follows) {}
+  rpc getFollowees(GetFolloweesParam) returns(Follows) {}
+  rpc getTweets(GetTweetsParam) returns(Tweets) {}
+  rpc getTimeline(GetTimelineParam) returns(Tweets) {}
 }
 
 message JWT {
@@ -23,13 +23,13 @@ message SimpleResponse {
   string Message = 1;
 }
 
-message User {
+message UserConfig {
   string Username = 1;
   string Password = 2;
 }
 
-message UserID {
-  string UserID = 1;
+message FolloweeUserID {
+  string FolloweeUserID = 1;
 }
 
 message Follow {
@@ -43,6 +43,10 @@ message Follows {
   repeated Follow Follows = 1;
 }
 
+message TweetText {
+  string TweetText = 1;
+}
+
 message Tweet {
   string ID = 1;
   string UserID = 2;
@@ -53,3 +57,8 @@ message Tweet {
 message Tweets {
   repeated Tweet Tweets = 1;
 }
+
+message GetFollowersParam{}
+message GetFolloweesParam {}
+message GetTweetsParam {}
+message GetTimelineParam {}

@@ -1,18 +1,17 @@
 package tweet
 
-// Config contains the fields necessary to create a tweet
-type Config struct {
-	UserID   string
-	Username string
-	Text     string
-}
-
 // Tweet represents an existing tweet
 type Tweet struct {
 	ID       string
 	UserID   string
 	Username string
 	Text     string
+}
+
+// Config contains the fields necessary to create a tweet
+type Config struct {
+	UserID string
+	Text   string
 }
 
 // Repository interface for fetching users' tweets and timelines
