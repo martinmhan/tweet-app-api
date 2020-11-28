@@ -48,14 +48,14 @@ func main() {
 
 	db := client.Database(dbName)
 	ur := repository.UserRepository{Database: db}
-	fr := repository.FollowerRepository{Database: db}
+	fr := repository.FollowRepository{Database: db}
 	tr := repository.TweetRepository{Database: db}
 
 	g := grpc.NewServer()
 	s := &application.DatabaseAccessServer{
-		UserRepository:     &ur,
-		FollowerRepository: &fr,
-		TweetRepository:    &tr,
+		UserRepository:   &ur,
+		FollowRepository: &fr,
+		TweetRepository:  &tr,
 	}
 	pb.RegisterDatabaseAccessServer(g, s)
 

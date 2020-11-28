@@ -5,14 +5,15 @@ package database;
 option go_package = "github.com/martinmhan/tweet-app-api/cmd/databaseaccess/proto";
 
 service DatabaseAccess {
-  rpc insertUser(UserConfig) returns (InsertID) {}
-  rpc insertFollower(Follower) returns (InsertID) {}
-  rpc insertTweet(TweetConfig) returns (InsertID) {}
+  rpc saveUser(UserConfig) returns (InsertID) {}
+  rpc saveFollow(Follow) returns (InsertID) {}
+  rpc saveTweet(TweetConfig) returns (InsertID) {}
   rpc getUser(UserID) returns (User) {}
-  rpc getFollowers(UserID) returns (Followers) {}
+  rpc getFollowers(UserID) returns (Follows) {}
+  rpc getFollowees(UserID) returns (Follows) {}
   rpc getTweets(UserID) returns (Tweets) {}
   rpc getAllUsers(GetAllUsersParam) returns (Users) {}
-  rpc getAllFollowers(GetAllFollowersParam) returns (Followers) {}
+  rpc getAllFollows(GetAllFollowsParam) returns (Follows) {}
   rpc getAllTweets(GetAllTweetsParam) returns (Tweets) {}
 }
 
@@ -52,17 +53,19 @@ message Tweets {
   repeated Tweet Tweets = 1;
 }
 
-message Follower {
+message Follow {
   string FollowerUserID = 1;
-  string FolloweeUserID = 2;
+  string FollowerUsername = 2;
+  string FolloweeUserID = 3;
+  string FolloweeUsername = 4;
 }
 
-message Followers {
-  repeated Follower Followers = 1;
+message Follows {
+  repeated Follow Follows = 1;
 }
 
 message GetAllUsersParam {}
-message GetAllFollowersParam {}
+message GetAllFollowsParam {}
 message GetAllTweetsParam {}
 
 message InsertID {

@@ -1,13 +1,13 @@
 package tweet
 
-// Config TO DO
+// Config contains the fields necessary to create a tweet
 type Config struct {
 	UserID   string
 	Username string
 	Text     string
 }
 
-// Tweet TO DO
+// Tweet represents an existing tweet
 type Tweet struct {
 	ID       string
 	UserID   string
@@ -15,7 +15,7 @@ type Tweet struct {
 	Text     string
 }
 
-// Repository TO DO
+// Repository is the Tweet Repository interface
 type Repository interface {
 	Save(Config) (insertID string, err error)
 	FindByUserID(userID string) ([]Tweet, error)
