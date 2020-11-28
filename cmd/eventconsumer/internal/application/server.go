@@ -37,7 +37,7 @@ func (e *EventConsumerServer) createUser(eventPayload []byte) error {
 }
 
 func (e *EventConsumerServer) createFollow(eventPayload []byte) error {
-	var f follow.Follow
+	var f follow.Config
 
 	err := json.Unmarshal(eventPayload, &f)
 	if err != nil {
@@ -114,7 +114,7 @@ func (e *EventConsumerServer) Listen() error {
 				e.createUser(d.Body)
 			case "TweetCreation":
 				e.createTweet(d.Body)
-			case "FollowerCreation":
+			case "FollowCreation":
 				e.createFollow(d.Body)
 			}
 		}

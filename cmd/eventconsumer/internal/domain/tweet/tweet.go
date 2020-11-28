@@ -10,9 +10,8 @@ type Tweet struct {
 
 // Config contains the fields necessary to create a tweet
 type Config struct {
-	UserID   string
-	Username string
-	Text     string
+	UserID string
+	Text   string
 }
 
 // Repository is the Tweet repository interface

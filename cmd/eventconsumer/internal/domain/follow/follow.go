@@ -8,7 +8,13 @@ type Follow struct {
 	FolloweeUsername string
 }
 
+// Config contains the fields necessary to create a follow
+type Config struct {
+	FollowerUserID string
+	FolloweeUserID string
+}
+
 // Repository is the Follower repository interface
 type Repository interface {
-	Save(Follow) error
+	Save(Config) error
 }

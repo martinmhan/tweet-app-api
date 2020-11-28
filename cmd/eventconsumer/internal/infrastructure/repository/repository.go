@@ -53,27 +53,37 @@ type FollowRepository struct {
 
 // Save adds a new follow (i.e., follower/followee relationship between the two provided user ids)
 // to the database, then updates the Read View service
-func (fr *FollowRepository) Save(f follow.Follow) error {
-	_, err := fr.DatabaseAccessClient.SaveFollow(
+func (fr *FollowRepository) Save(f follow.Config) error {
+	follower, err := fr.ReadViewClient.GetUserByUserID(context.TODO(), &readviewpb.UserID{UserID: f.FollowerUserID})
+	if err != nil {
+		return err
+	}
+
+	followee, err := fr.ReadViewClient.GetUserByUserID(context.TODO(), &readviewpb.UserID{UserID: f.FolloweeUserID})
+	if err != nil {
+		return err
+	}
+
+	_, err = fr.DatabaseAccessClient.SaveFollow(
 		context.TODO(),
 		&dbaccesspb.Follow{
 			FollowerUserID:   f.FollowerUserID,
-			FollowerUsername: f.FollowerUsername,
+			FollowerUsername: follower.Username,
 			FolloweeUserID:   f.FolloweeUserID,
-			FolloweeUsername: f.FolloweeUsername,
+			FolloweeUsername: followee.Username,
 		},
 	)
 	if err != nil {
 		return err
 	}
 
-	_, err = fr.ReadViewClient.AddFollower(
+	_, err = fr.ReadViewClient.AddFollow(
 		context.TODO(),
 		&readviewpb.Follow{
 			FollowerUserID:   f.FollowerUserID,
-			FollowerUsername: f.FollowerUsername,
+			FollowerUsername: follower.Username,
 			FolloweeUserID:   f.FolloweeUserID,
-			FolloweeUsername: f.FolloweeUsername,
+			FolloweeUsername: followee.Username,
 		},
 	)
 	if err != nil {
@@ -91,11 +101,16 @@ type TweetRepository struct {
 
 // Save inserts a tweet into the database, then updates the Read View service
 func (tr *TweetRepository) Save(conf tweet.Config) (tweet.Tweet, error) {
+	user, err := tr.ReadViewClient.GetUserByUserID(context.TODO(), &readviewpb.UserID{UserID: conf.UserID})
+	if err != nil {
+		return tweet.Tweet{}, err
+	}
+
 	insertID, err := tr.DatabaseAccessClient.SaveTweet(
 		context.TODO(),
 		&dbaccesspb.TweetConfig{
 			UserID:   conf.UserID,
-			Username: conf.Username,
+			Username: user.Username,
 			Text:     conf.Text,
 		},
 	)
@@ -108,7 +123,7 @@ func (tr *TweetRepository) Save(conf tweet.Config) (tweet.Tweet, error) {
 		&readviewpb.Tweet{
 			ID:       insertID.InsertID,
 			UserID:   conf.UserID,
-			Username: conf.Username,
+			Username: user.Username,
 			Text:     conf.Text,
 		},
 	)
@@ -119,7 +134,7 @@ func (tr *TweetRepository) Save(conf tweet.Config) (tweet.Tweet, error) {
 	return tweet.Tweet{
 		ID:       insertID.InsertID,
 		UserID:   conf.UserID,
-		Username: conf.Username,
+		Username: user.Username,
 		Text:     conf.Text,
 	}, nil
 }
