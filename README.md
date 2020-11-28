@@ -1,5 +1,5 @@
 # Summary
-This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with new architectural design principles (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is simple - you can create a user, log in, create a tweet, and follow other users to view their tweet. However, I wanted to practice designing an efficient backend system all the while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
+This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with architectural design principles (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is simple - you can create a user, log in, create a tweet, and follow other users to view their tweet. However, I wanted to practice designing an efficient backend system all the while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
 
 # Design Features:
   - [Event Driven Architecture (EDA)](https://en.wikipedia.org/wiki/Event-driven_architecture)
