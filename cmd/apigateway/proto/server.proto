@@ -7,9 +7,10 @@ option go_package = "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto";
 service APIGateway {
   rpc loginUser(User) returns (JWT) {}
   rpc createUser(User) returns (SimpleResponse) {}
+  rpc createFollow(UserID) returns(SimpleResponse) {}
   rpc createTweet(Tweet) returns(SimpleResponse) {}
-  rpc follow(UserID) returns(SimpleResponse) {}
-  rpc getFollowers(UserID) returns(Followers) {}
+  rpc getFollowers(UserID) returns(Follows) {}
+  rpc getFollowees(UserID) returns(Follows) {}
   rpc getTweets(UserID) returns(Tweets) {}
   rpc getTimeline(UserID) returns(Tweets) {}
 }
@@ -31,13 +32,15 @@ message UserID {
   string UserID = 1;
 }
 
-message Follower {
+message Follow {
   string FollowerUserID = 1;
-  string FolloweeUserID = 2;
+  string FollowerUsername = 2;
+  string FolloweeUserID = 3;
+  string FolloweeUsername = 4;
 }
 
-message Followers {
-  repeated Follower Followers = 1;
+message Follows {
+  repeated Follow Follows = 1;
 }
 
 message Tweet {

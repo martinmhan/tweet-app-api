@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/user"
 	readviewpb "github.com/martinmhan/tweet-app-api/cmd/readview/proto"
@@ -14,8 +14,8 @@ type UserRepository struct {
 	readviewpb.ReadViewClient
 }
 
-// FindByUserID fetches a user given a userID
-func (ur *UserRepository) FindByUserID(userID string) (user.User, error) {
+// FindByID fetches a user given a userID
+func (ur *UserRepository) FindByID(userID string) (user.User, error) {
 	uid := readviewpb.UserID{UserID: userID}
 	u, err := ur.ReadViewClient.GetUserByUserID(context.TODO(), &uid)
 	if err != nil {
@@ -85,26 +85,49 @@ func (tr *TweetRepository) FindTimelineByUserID(userID string) ([]tweet.Tweet, e
 	return tweets, nil
 }
 
-// FollowerRepository implements the follower repository
-type FollowerRepository struct {
+// FollowRepository implements the follower repository
+type FollowRepository struct {
 	readviewpb.ReadViewClient
 }
 
-// FindByUserID fetches the followers of a given user (i.,e., the followee)
-func (fr *FollowerRepository) FindByUserID(userID string) ([]follower.Follower, error) {
+// FindFollowersByUserID fetches the followers of a given user
+func (fr *FollowRepository) FindFollowersByUserID(userID string) ([]follow.Follow, error) {
 	uid := readviewpb.UserID{UserID: userID}
-	pbfollowers, err := fr.ReadViewClient.GetFollowers(context.TODO(), &uid)
+	pbFollows, err := fr.ReadViewClient.GetFollowers(context.TODO(), &uid)
 	if err != nil {
-		return []follower.Follower{}, err
+		return []follow.Follow{}, err
 	}
 
-	followers := []follower.Follower{}
-	for i, f := range pbfollowers.Followers {
-		followers[i] = follower.Follower{
-			FollowerUserID: f.FollowerUserID,
-			FolloweeUserID: f.FolloweeUserID,
+	followers := []follow.Follow{}
+	for i, f := range pbFollows.Follows {
+		followers[i] = follow.Follow{
+			FollowerUserID:   f.FollowerUserID,
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   f.FolloweeUserID,
+			FolloweeUsername: f.FolloweeUsername,
 		}
 	}
 
 	return followers, nil
+}
+
+// FindFolloweesByUserID fetches the followees of a given user (i.e., other users that the user follows)
+func (fr *FollowRepository) FindFolloweesByUserID(userID string) ([]follow.Follow, error) {
+	uid := readviewpb.UserID{UserID: userID}
+	pbFollows, err := fr.ReadViewClient.GetFollowees(context.TODO(), &uid)
+	if err != nil {
+		return []follow.Follow{}, err
+	}
+
+	followees := []follow.Follow{}
+	for i, f := range pbFollows.Follows {
+		followees[i] = follow.Follow{
+			FollowerUserID:   f.FollowerUserID,
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   f.FolloweeUserID,
+			FolloweeUsername: f.FolloweeUsername,
+		}
+	}
+
+	return followees, nil
 }

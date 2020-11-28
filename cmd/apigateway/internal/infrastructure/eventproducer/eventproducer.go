@@ -3,7 +3,7 @@ package eventproducer
 import (
 	"context"
 
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/user"
 	eventproducerpb "github.com/martinmhan/tweet-app-api/cmd/eventproducer/proto"
@@ -26,7 +26,7 @@ func (ep *EventProducer) ProduceUserCreation(u user.Config) error {
 	return nil
 }
 
-// ProduceTweetCreation tells the events producer service via gRPC to publish a Create Tweet event to the message queue
+// ProduceTweetCreation sends a gRPC to the event producer service to publish a CreateTweet event to the message queue
 func (ep *EventProducer) ProduceTweetCreation(t tweet.Config) error {
 	tc := eventproducerpb.TweetConfig{UserID: t.UserID, Username: t.Username, Text: t.Text}
 
@@ -38,11 +38,16 @@ func (ep *EventProducer) ProduceTweetCreation(t tweet.Config) error {
 	return nil
 }
 
-// ProduceFollowerCreation TO DO
-func (ep *EventProducer) ProduceFollowerCreation(f follower.Follower) error {
-	fo := eventproducerpb.Follower{FollowerUserID: f.FollowerUserID, FolloweeUserID: f.FolloweeUserID}
+// ProduceFollowCreation sends a gRPC to the event producer service to publish a CreateFollow event to the message queue
+func (ep *EventProducer) ProduceFollowCreation(f follow.Follow) error {
+	fo := eventproducerpb.Follow{
+		FollowerUserID:   f.FollowerUserID,
+		FollowerUsername: f.FollowerUsername,
+		FolloweeUserID:   f.FolloweeUserID,
+		FolloweeUsername: f.FolloweeUsername,
+	}
 
-	_, err := ep.EventProducerClient.ProduceFollowerCreation(context.TODO(), &fo)
+	_, err := ep.EventProducerClient.ProduceFollowCreation(context.TODO(), &fo)
 	if err != nil {
 		return err
 	}

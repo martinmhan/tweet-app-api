@@ -91,7 +91,7 @@ func (a *Authorization) ValidatePassword(username string, password string) (bool
 	return true, nil
 }
 
-// JWTClaims TO DO
+// JWTClaims contains the fields stored in a JWT
 type JWTClaims struct {
 	Username string
 	UserID   string

@@ -55,15 +55,20 @@ func main() {
 	rvClient := readviewpb.NewReadViewClient(rvConn)
 	epClient := eventproducerpb.NewEventProducerClient(epConn)
 
-	g := grpc.NewServer()
+	ur := repository.UserRepository{ReadViewClient: rvClient}
+	fr := repository.FollowRepository{ReadViewClient: rvClient}
+	tr := repository.TweetRepository{ReadViewClient: rvClient}
+	auth := auth.Authorization{JWTKey: jwtKey, UserRepository: &ur}
+	ep := eventproducer.EventProducer{EventProducerClient: epClient}
 	s := &application.APIGatewayServer{
-		Authorization:      auth.Authorization{JWTKey: jwtKey, UserRepository: nil},
-		EventProducer:      eventproducer.EventProducer{EventProducerClient: epClient},
-		UserRepository:     repository.UserRepository{ReadViewClient: rvClient},
-		FollowerRepository: repository.FollowerRepository{ReadViewClient: rvClient},
-		TweetRepository:    repository.TweetRepository{ReadViewClient: rvClient},
+		UserRepository:   &ur,
+		FollowRepository: &fr,
+		TweetRepository:  &tr,
+		Authorization:    auth,
+		EventProducer:    ep,
 	}
 
+	g := grpc.NewServer()
 	pb.RegisterAPIGatewayServer(g, s)
 
 	lis, err := net.Listen("tcp", ":"+port)

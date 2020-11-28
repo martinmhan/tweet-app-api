@@ -15,6 +15,6 @@ type User struct {
 
 // Repository interface for fetching users
 type Repository interface {
-	FindById(UserID string) (User, error)
+	FindByID(UserID string) (User, error)
 	FindByUsername(Username string) (User, error)
 }

@@ -7,22 +7,21 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/auth"
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/user"
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/infrastructure/eventproducer"
-	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/infrastructure/repository"
 	pb "github.com/martinmhan/tweet-app-api/cmd/apigateway/proto"
 )
 
 // APIGatewayServer contains the fields and gRPC method implementations used by the API Gateway service
 type APIGatewayServer struct {
 	pb.UnimplementedAPIGatewayServer
+	UserRepository   user.Repository
+	TweetRepository  tweet.Repository
+	FollowRepository follow.Repository
 	auth.Authorization
 	eventproducer.EventProducer
-	repository.UserRepository
-	repository.TweetRepository
-	repository.FollowerRepository
 }
 
 // LoginUser provides a JWT given a valid username/password
@@ -77,9 +76,9 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.S
 	}
 
 	claims := token.Claims.(*auth.JWTClaims)
-	uid := claims.UserID
+	userID := claims.UserID
 
-	c := tweet.Config{UserID: uid, Username: in.Username, Text: in.Text}
+	c := tweet.Config{UserID: userID, Username: in.Username, Text: in.Text}
 	err = s.ProduceTweetCreation(c)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to create tweet"}, err
@@ -88,8 +87,8 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.Tweet) (*pb.S
 	return &pb.SimpleResponse{Message: "Tweet Creation accepted"}, nil
 }
 
-// Follow calls the event producer to make the current user a follower of the passed in UserID
-func (s *APIGatewayServer) Follow(ctx context.Context, in *pb.UserID) (*pb.SimpleResponse, error) {
+// CreateFollow calls the event producer to make the current user a follower of the given UserID
+func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.UserID) (*pb.SimpleResponse, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find metadata headers from context")
@@ -102,19 +101,99 @@ func (s *APIGatewayServer) Follow(ctx context.Context, in *pb.UserID) (*pb.Simpl
 	}
 
 	claims := token.Claims.(*auth.JWTClaims)
-	uid := claims.UserID
+	currentUserID := claims.UserID
+	currentUsername := claims.Username
 
-	if uid == in.UserID {
+	followeeUserID := in.UserID
+	if currentUserID == followeeUserID {
 		return &pb.SimpleResponse{Message: "A user cannot follow him/her self"}, errors.New("Failed to follow user")
 	}
 
-	f := follower.Follower{FollowerUserID: uid, FolloweeUserID: in.UserID}
-	err = s.ProduceFollowerCreation(f)
+	followee, err := s.UserRepository.FindByID(followeeUserID)
+	if followee.ID == "" {
+		return &pb.SimpleResponse{Message: "Invalid UserID"}, errors.New("Failed to follow user : Invalid UserID")
+	}
+
+	f := follow.Follow{
+		FollowerUserID:   currentUserID,
+		FollowerUsername: currentUsername,
+		FolloweeUserID:   followeeUserID,
+		FolloweeUsername: followee.Username,
+	}
+	err = s.ProduceFollowCreation(f)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to follow user"}, err
 	}
 
 	return &pb.SimpleResponse{Message: "Follow accepted"}, nil
+}
+
+// GetFollowers returns the followers of a given UserID
+func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+	headers, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
+	}
+
+	tokenString := headers["authorization"][0]
+	token, err := s.ValidateJWT(tokenString)
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	claims := token.Claims.(*auth.JWTClaims)
+	userID := claims.UserID
+
+	followers, err := s.FollowRepository.FindFollowersByUserID(userID)
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	var pbFollows pb.Follows
+	for i, f := range followers {
+		pbFollows.Follows[i] = &pb.Follow{
+			FollowerUserID:   f.FollowerUserID,
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   f.FolloweeUserID,
+			FolloweeUsername: f.FolloweeUsername,
+		}
+	}
+
+	return &pbFollows, nil
+}
+
+// GetFollowees returns the followees of a given UserID (i.e., users that the user follows)
+func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.UserID) (*pb.Follows, error) {
+	headers, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
+	}
+
+	tokenString := headers["authorization"][0]
+	token, err := s.ValidateJWT(tokenString)
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	claims := token.Claims.(*auth.JWTClaims)
+	userID := claims.UserID
+
+	followees, err := s.FollowRepository.FindFolloweesByUserID(userID)
+	if err != nil {
+		return &pb.Follows{}, err
+	}
+
+	var pbFollows pb.Follows
+	for i, f := range followees {
+		pbFollows.Follows[i] = &pb.Follow{
+			FollowerUserID:   f.FollowerUserID,
+			FollowerUsername: f.FollowerUsername,
+			FolloweeUserID:   f.FolloweeUserID,
+			FolloweeUsername: f.FolloweeUsername,
+		}
+	}
+
+	return &pbFollows, nil
 }
 
 // GetTweets returns the tweets created by a given UserID
