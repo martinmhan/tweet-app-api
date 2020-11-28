@@ -40,13 +40,13 @@ func main() {
 
 	daClient := dbaccesspb.NewDatabaseAccessClient(conn)
 	ur := repository.UserRepository{DatabaseAccessClient: daClient}
-	fr := repository.FollowerRepository{DatabaseAccessClient: daClient}
+	fr := repository.FollowRepository{DatabaseAccessClient: daClient}
 	tr := repository.TweetRepository{DatabaseAccessClient: daClient}
 
 	ds := datastore.Datastore{
-		UserRepository:     &ur,
-		FollowerRepository: &fr,
-		TweetRepository:    &tr,
+		UserRepository:   &ur,
+		FollowRepository: &fr,
+		TweetRepository:  &tr,
 	}
 
 	err = ds.Initialize()
@@ -55,7 +55,7 @@ func main() {
 	}
 
 	g := grpc.NewServer()
-	s := &application.ReadViewServer{Datastore: ds}
+	s := &application.ReadViewServer{Datastore: &ds}
 	pb.RegisterReadViewServer(g, s)
 
 	lis, err := net.Listen("tcp", ":"+port)

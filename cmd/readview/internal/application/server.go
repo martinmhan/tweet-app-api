@@ -3,10 +3,10 @@ package application
 import (
 	"context"
 
-	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/datastore"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/user"
-	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/infrastructure/datastore"
 	pb "github.com/martinmhan/tweet-app-api/cmd/readview/proto"
 )
 
@@ -49,12 +49,14 @@ func (s *ReadViewServer) AddTweet(ctx context.Context, in *pb.Tweet) (*pb.Simple
 }
 
 // AddFollower adds a user/follower pair to the ReadViewServer's data store
-func (s *ReadViewServer) AddFollower(ctx context.Context, in *pb.Follower) (*pb.SimpleResponse, error) {
-	f := follower.Follower{
-		FollowerUserID: user.ID(in.FollowerUserID),
-		FolloweeUserID: user.ID(in.FolloweeUserID),
+func (s *ReadViewServer) AddFollower(ctx context.Context, in *pb.Follow) (*pb.SimpleResponse, error) {
+	f := follow.Follow{
+		FollowerUserID:   user.ID(in.FollowerUserID),
+		FollowerUsername: in.FollowerUsername,
+		FolloweeUserID:   user.ID(in.FolloweeUserID),
+		FolloweeUsername: in.FolloweeUsername,
 	}
-	err := s.Datastore.AddFollower(f)
+	err := s.Datastore.AddFollow(f)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to add follower to read view"}, err
 	}

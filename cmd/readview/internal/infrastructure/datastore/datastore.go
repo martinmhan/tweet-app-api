@@ -4,19 +4,20 @@ import (
 	"errors"
 	"log"
 
-	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/readview/internal/domain/user"
 )
 
-// Datastore is an in-memory object that stores a copy of all the data for this app
+// Datastore is an in-memory object that stores a copy of all the app's data
 type Datastore struct {
-	UserRepository     user.Repository
-	FollowerRepository follower.Repository
-	TweetRepository    tweet.Repository
+	UserRepository   user.Repository
+	FollowRepository follow.Repository
+	TweetRepository  tweet.Repository
 
-	Users     map[user.ID]user.Config
-	Followers map[user.ID][]user.ID
+	Users     map[user.ID]user.User
+	Followers map[user.ID][]follow.Follow
+	Followees map[user.ID][]follow.Follow
 	Tweets    map[user.ID][]tweet.Tweet
 }
 
@@ -28,7 +29,7 @@ func (ds *Datastore) Initialize() error {
 	if err != nil {
 		return err
 	}
-	followers, err := ds.FollowerRepository.FindAll()
+	follows, err := ds.FollowRepository.FindAll()
 	if err != nil {
 		return err
 	}
@@ -37,23 +38,29 @@ func (ds *Datastore) Initialize() error {
 		return err
 	}
 
+	ds.Users = map[user.ID]user.User{}
+	ds.Followers = map[user.ID][]follow.Follow{}
+	ds.Followees = map[user.ID][]follow.Follow{}
+	ds.Tweets = map[user.ID][]tweet.Tweet{}
+
 	for _, u := range users {
-		ds.Users[u.ID] = user.Config{
-			Username: u.Username,
-			Password: u.Password,
-		}
+		ds.Users[u.ID] = u
 	}
 
-	for _, f := range followers {
-		userID := f.FolloweeUserID
-		followerID := f.FollowerUserID
-
-		_, ok := ds.Followers[userID]
+	for _, f := range follows {
+		// add the follow to the followee's list of followers
+		followers, ok := ds.Followers[f.FolloweeUserID]
 		if !ok {
-			ds.Followers[userID] = []user.ID{}
+			followers = []follow.Follow{}
 		}
+		ds.Followers[f.FolloweeUserID] = append(followers, f)
 
-		ds.Followers[userID] = append(ds.Followers[userID], followerID)
+		// add the follow to the follower's list of followees
+		followees, ok := ds.Followees[f.FollowerUserID]
+		if !ok {
+			followees = []follow.Follow{}
+		}
+		ds.Followees[f.FollowerUserID] = append(followees, f)
 	}
 
 	for _, t := range tweets {
@@ -61,9 +68,10 @@ func (ds *Datastore) Initialize() error {
 		if !ok {
 			ds.Tweets[t.UserID] = []tweet.Tweet{}
 		}
-
 		ds.Tweets[t.UserID] = append(ds.Tweets[t.UserID], t)
 	}
+
+	log.Println("Data store initialized")
 
 	return nil
 }
@@ -79,7 +87,7 @@ func (ds *Datastore) AddUser(u user.User) error {
 		return errors.New("User already exists")
 	}
 
-	ds.Users[u.ID] = user.Config{Username: u.Username, Password: u.Password}
+	ds.Users[u.ID] = u
 
 	return nil
 }
@@ -100,37 +108,42 @@ func (ds *Datastore) AddTweet(t tweet.Tweet) error {
 	return nil
 }
 
-// AddFollower adds a follower to the datastore
-func (ds *Datastore) AddFollower(f follower.Follower) error {
-	if f.FollowerUserID == "" || f.FolloweeUserID == "" {
-		return errors.New("Invalid userID(s)")
+// AddFollow adds a follow to the datastore (in both the follower's list of followees and followee's list of followers)
+func (ds *Datastore) AddFollow(f follow.Follow) error {
+	if f.FollowerUserID == "" || f.FollowerUsername == "" || f.FolloweeUserID == "" || f.FolloweeUsername == "" {
+		return errors.New("Invalid follow")
 	}
 
 	followers, ok := ds.Followers[f.FolloweeUserID]
 	if !ok {
-		followers = []user.ID{}
+		followers = []follow.Follow{}
 	}
+	ds.Followers[f.FolloweeUserID] = append(followers, f)
 
-	ds.Followers[f.FolloweeUserID] = append(followers, f.FollowerUserID)
+	followees, ok := ds.Followees[f.FollowerUserID]
+	if !ok {
+		followees = []follow.Follow{}
+	}
+	ds.Followees[f.FollowerUserID] = append(followees, f)
 
 	return nil
 }
 
-// GetUserByUserID TO DO
-func (ds *Datastore) GetUserByUserID(uid user.ID) (user.User, error) {
-	u, ok := ds.Users[uid]
+// GetUserByUserID returns a user given a userID
+func (ds *Datastore) GetUserByUserID(userID user.ID) (user.User, error) {
+	u, ok := ds.Users[userID]
 	if !ok {
 		return user.User{}, errors.New("Invalid UserID")
 	}
 
 	return user.User{
-		ID:       uid,
+		ID:       userID,
 		Username: u.Username,
 		Password: u.Password,
 	}, nil
 }
 
-// GetUserByUsername TO DO
+// GetUserByUsername returns a user given a username
 func (ds *Datastore) GetUserByUsername(username string) (user.User, error) {
 	for uid, u := range ds.Users {
 		if u.Username == username {
@@ -142,12 +155,32 @@ func (ds *Datastore) GetUserByUsername(username string) (user.User, error) {
 		}
 	}
 
-	return user.User{}, errors.New("User does not exist")
+	return user.User{}, nil
+}
+
+// GetFollowers TO DO
+func (ds *Datastore) GetFollowers(userID user.ID) ([]follow.Follow, error) {
+	followers, ok := ds.Followers[userID]
+	if !ok {
+		return []follow.Follow{}, nil
+	}
+
+	return followers, nil
+}
+
+// GetFollowees returns the tweets of the users that the given user follows
+func (ds *Datastore) GetFollowees(userID user.ID) ([]follow.Follow, error) {
+	followees, ok := ds.Followees[userID]
+	if !ok {
+		return []follow.Follow{}, nil
+	}
+
+	return followees, nil
 }
 
 // GetTweets TO DO
-func (ds *Datastore) GetTweets(uid user.ID) ([]tweet.Tweet, error) {
-	tweets, ok := ds.Tweets[uid]
+func (ds *Datastore) GetTweets(userID user.ID) ([]tweet.Tweet, error) {
+	tweets, ok := ds.Tweets[userID]
 	if !ok {
 		return []tweet.Tweet{}, nil
 	}
@@ -155,16 +188,16 @@ func (ds *Datastore) GetTweets(uid user.ID) ([]tweet.Tweet, error) {
 	return tweets, nil
 }
 
-// GetTimeline TO DO
-func (ds *Datastore) GetTimeline(uid user.ID) ([]tweet.Tweet, error) {
-	followers, ok := ds.Followers[uid]
+// GetTimeline returns the tweets of the users that the given user follows
+func (ds *Datastore) GetTimeline(userID user.ID) ([]tweet.Tweet, error) {
+	followees, ok := ds.Followees[userID]
 	if !ok {
 		return []tweet.Tweet{}, nil
 	}
 
 	var timeline []tweet.Tweet
-	for _, fid := range followers {
-		tweets := ds.Tweets[fid]
+	for _, f := range followees {
+		tweets := ds.Tweets[f.FolloweeUserID]
 		timeline = append(timeline, tweets...)
 	}
 
