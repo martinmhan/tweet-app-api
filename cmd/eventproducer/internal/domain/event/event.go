@@ -10,19 +10,19 @@ type Event struct {
 type Type int
 
 const (
-	// UserCreation is an event type
+	// UserCreation is an event type that creates a User
 	UserCreation Type = iota
-	// TweetCreation is an event type
+	// TweetCreation is an event type that creates a Tweet
 	TweetCreation
-	// FollowerCreation is an event type
-	FollowerCreation
+	// FollowCreation is an event type that creates a Follow
+	FollowCreation
 )
 
 func (t Type) String() string {
 	types := [...]string{
 		"UserCreation",
 		"TweetCreation",
-		"FollowerCreation",
+		"FollowCreation",
 	}
 
 	return types[t]

@@ -43,17 +43,17 @@ func (s *EventProducerServer) ProduceTweetCreation(ctx context.Context, in *pb.T
 	return &pb.SimpleResponse{Message: "Tweet creation accepted"}, nil
 }
 
-// ProduceFollowerCreation publishes a FollowerCreation event to the message queue
-func (s *EventProducerServer) ProduceFollowerCreation(ctx context.Context, in *pb.Follower) (*pb.SimpleResponse, error) {
+// ProduceFollowCreation publishes a FollowCreation event to the message queue
+func (s *EventProducerServer) ProduceFollowCreation(ctx context.Context, in *pb.Follow) (*pb.SimpleResponse, error) {
 	e := event.Event{
-		Type:    event.FollowerCreation,
+		Type:    event.FollowCreation,
 		Payload: in,
 	}
 
 	err := s.Produce(e)
 	if err != nil {
-		return &pb.SimpleResponse{Message: "Follower creation failed"}, err
+		return &pb.SimpleResponse{Message: "Follow creation failed"}, err
 	}
 
-	return &pb.SimpleResponse{Message: "Follower creation accepted"}, nil
+	return &pb.SimpleResponse{Message: "Follow creation accepted"}, nil
 }
