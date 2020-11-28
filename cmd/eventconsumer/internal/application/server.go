@@ -6,18 +6,18 @@ import (
 
 	"github.com/streadway/amqp"
 
-	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/follower"
+	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/follow"
 	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/tweet"
 	"github.com/martinmhan/tweet-app-api/cmd/eventconsumer/internal/domain/user"
 )
 
 // EventConsumerServer listens for and executes events from the message queue
 type EventConsumerServer struct {
-	Connection         *amqp.Connection
-	MessageQueueName   string
-	UserRepository     user.Repository
-	FollowerRepository follower.Repository
-	TweetRepository    tweet.Repository
+	Connection       *amqp.Connection
+	MessageQueueName string
+	UserRepository   user.Repository
+	FollowRepository follow.Repository
+	TweetRepository  tweet.Repository
 }
 
 func (e *EventConsumerServer) createUser(eventPayload []byte) error {
@@ -29,6 +29,22 @@ func (e *EventConsumerServer) createUser(eventPayload []byte) error {
 	}
 
 	_, err = e.UserRepository.Save(conf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *EventConsumerServer) createFollow(eventPayload []byte) error {
+	var f follow.Follow
+
+	err := json.Unmarshal(eventPayload, &f)
+	if err != nil {
+		return err
+	}
+
+	err = e.FollowRepository.Save(f)
 	if err != nil {
 		return err
 	}
@@ -94,10 +110,12 @@ func (e *EventConsumerServer) Listen() error {
 			log.Printf("Message Body: %s", d.Body)
 
 			switch d.Type {
-			case "CreateUser":
+			case "UserCreation":
 				e.createUser(d.Body)
-			case "CreateTweet":
+			case "TweetCreation":
 				e.createTweet(d.Body)
+			case "FollowerCreation":
+				e.createFollow(d.Body)
 			}
 		}
 	}()

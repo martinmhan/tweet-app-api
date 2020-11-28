@@ -62,15 +62,15 @@ func main() {
 	rvClient := readviewpb.NewReadViewClient(rvConn)
 
 	ur := repository.UserRepository{DatabaseAccessClient: daClient, ReadViewClient: rvClient}
-	fr := repository.FollowerRepository{DatabaseAccessClient: daClient, ReadViewClient: rvClient}
+	fr := repository.FollowRepository{DatabaseAccessClient: daClient, ReadViewClient: rvClient}
 	tr := repository.TweetRepository{DatabaseAccessClient: daClient, ReadViewClient: rvClient}
 
 	s := &application.EventConsumerServer{
-		Connection:         conn,
-		MessageQueueName:   mqName,
-		UserRepository:     &ur,
-		FollowerRepository: &fr,
-		TweetRepository:    &tr,
+		Connection:       conn,
+		MessageQueueName: mqName,
+		UserRepository:   &ur,
+		FollowRepository: &fr,
+		TweetRepository:  &tr,
 	}
 
 	s.Listen()
