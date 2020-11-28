@@ -58,7 +58,7 @@ func main() {
 	ur := repository.UserRepository{ReadViewClient: rvClient}
 	fr := repository.FollowRepository{ReadViewClient: rvClient}
 	tr := repository.TweetRepository{ReadViewClient: rvClient}
-	auth := auth.Authorization{JWTKey: jwtKey, UserRepository: &ur}
+	auth := auth.New(jwtKey, &ur)
 	ep := eventproducer.EventProducer{EventProducerClient: epClient}
 	s := &application.APIGatewayServer{
 		UserRepository:   &ur,

@@ -5,17 +5,30 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+
 	"github.com/martinmhan/tweet-app-api/cmd/apigateway/internal/domain/user"
 )
 
-// Authorization provides methods for creating/validating JWTs, passwords, and new usernames
-type Authorization struct {
+// Authorization is an interface containing auth methods
+type Authorization interface {
+	CreateJWT(username string) (string, error)
+	ValidateJWT(tokenString string) (*jwt.Token, error)
+	ValidateUsername(username string) (bool, error)
+	ValidatePassword(username string, password string) (bool, error)
+}
+
+// New returns an Authorization object
+func New(jwtKey string, ur user.Repository) Authorization {
+	return &auth{jwtKey, ur}
+}
+
+type auth struct {
 	JWTKey         string
 	UserRepository user.Repository
 }
 
 // CreateJWT creates a JSON web token with username and expiration properties given a username and jwtKey
-func (a *Authorization) CreateJWT(username string) (string, error) {
+func (a *auth) CreateJWT(username string) (string, error) {
 	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return "", err
@@ -43,7 +56,7 @@ func (a *Authorization) CreateJWT(username string) (string, error) {
 }
 
 // ValidateJWT validates a JSON web token
-func (a *Authorization) ValidateJWT(tokenString string) (*jwt.Token, error) {
+func (a *auth) ValidateJWT(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(*jwt.Token) (interface{}, error) {
 		return []byte(a.JWTKey), nil
 	})
@@ -60,7 +73,7 @@ func (a *Authorization) ValidateJWT(tokenString string) (*jwt.Token, error) {
 }
 
 // ValidateUsername checks if a user already exists with the given username
-func (a *Authorization) ValidateUsername(username string) (bool, error) {
+func (a *auth) ValidateUsername(username string) (bool, error) {
 	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return false, err
@@ -74,7 +87,7 @@ func (a *Authorization) ValidateUsername(username string) (bool, error) {
 }
 
 // ValidatePassword checks if the given password is correct for the given username
-func (a *Authorization) ValidatePassword(username string, password string) (bool, error) {
+func (a *auth) ValidatePassword(username string, password string) (bool, error) {
 	u, err := a.UserRepository.FindByUsername(username)
 	if err != nil {
 		return false, err
