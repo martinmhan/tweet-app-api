@@ -79,7 +79,7 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.TweetText) (*
 	userID := claims.UserID
 
 	c := tweet.Config{UserID: userID, Text: in.TweetText}
-	err = s.ProduceTweetCreation(c) // TO DO - update tweet creation consumer *_*_*
+	err = s.ProduceTweetCreation(c)
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to create tweet"}, err
 	}
@@ -112,7 +112,15 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.FolloweeUser
 		return &pb.SimpleResponse{Message: "Invalid UserID"}, errors.New("Failed to follow user : Invalid UserID")
 	}
 
-	// *_*_*_* TO DO check if already following
+	followees, err := s.FollowRepository.FindFolloweesByUserID(currentUserID)
+	if err != nil {
+		return &pb.SimpleResponse{Message: "Failed to create follow"}, errors.New("Failed to follow user : Error")
+	}
+	for _, f := range followees {
+		if f.FolloweeUserID == followeeUserID {
+			return &pb.SimpleResponse{Message: "Failed to create follow"}, errors.New("You already follow this user")
+		}
+	}
 
 	f := follow.Config{
 		FollowerUserID: currentUserID,
