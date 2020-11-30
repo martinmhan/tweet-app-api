@@ -6,11 +6,9 @@ This is a tweeting app API I built with a couple of learning goals in mind: 1) f
     - State-changing requests (i.e., creating a user, following a user, or creating a tweet) are processed via an event producer -> message queue -> event consumer.
     - The event producer service can "fire and forget" each request as an event, which the consumer service then picks up to fulfill.
   - [Command Query Responsibility Segregation (CQRS)](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs):
-    - This API separates read and write requests to optimize reads and prevent blocking of writes
-    - Reads are done via a Read View service, which stores a copy of data in memory
+    - This API separates read and write requests to optimize reads and prevent blocking of writes (see diagram below)
+    - Reads are done via a Read View service, which stores a copy of all data in memory
     - Writes are done via the message queue
-      - The Event Producer publishes a write event to the message queue
-      - The Event Consumer picks up and executes the event (i.e., writes to DB, then updates read view)
   - [Remote Procedure Call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call):
     - gRPC was used for direct communication with the UI and between services
       - This allows for the flexibility to handle UI requests either synchronously or asynchronously
