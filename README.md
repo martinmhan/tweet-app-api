@@ -17,8 +17,8 @@ This is a tweeting app API I built with a couple of learning goals in mind: 1) f
   - [Domain Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design):
     - Each microservice uses folder structure to separate logic into the following layers:
         - The Application layer defines the route handlers, i.e., the gRPC methods that a client is able to call. These handlers utilize domain objects and interfaces, but are not exposed to their implementation details.
-        - The Domain layer defines the domain objects (i.e., User, Follow, and Tweet) and their respective repository interfaces (if needed by the service). The Repository Pattern used by DDD is a means of abstracting the getting/saving of domain objects by utilizing repository objects.
-        - The Infrastructure layer implements the repositories, i.e., define the getting/saving functions. Note the implementations differ by service, but do one of the following:
+        - The Domain layer defines the domain objects (i.e., `User`, `Follow`, and `Tweet`) and their respective repository interfaces. The Repository Pattern used by DDD is a means of using repository objects to abstract the getting/saving of domain objects.
+        - The Infrastructure layer implements the repositories, i.e., define the getting/saving functions listed in their interfaces. Note the implementations differ by service, but do one of the following:
           - make a request to the database and/or Read View service to fetch domain objects
           - make a request to the database and/or Read View to save domain objects
           - produce an event that will save domain objects
