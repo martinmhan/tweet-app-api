@@ -24,17 +24,17 @@ This is a tweeting app API I built with a couple of learning goals in mind: 1) f
           - make a request to the database and/or Read View to save domain objects
           - produce an event that will save domain objects
   - [Dependency Injection (DI)](https://en.wikipedia.org/wiki/Dependency_injection):
-    - The servers in this mono-repo depend on other objects (e.g., repositories, event producers) to handle their routes. Instead of the servers constructing those objects themselves, they only possess interfaces of those objects and receive the implementations when instantiated. This allows for greater separation of concerns.
+    - The servers in this mono-repo depend on other objects (e.g., repositories, event producers) to handle routes. Instead of the servers constructing those objects themselves, they only possess interfaces of those objects and receive the implementations when instantiated - this allows for greater separation of concerns.
     - For example, the EventProducerServer (`cmd/eventproducer/internal/application/server.go`) takes in an `event.Producer` interface. The server object only knows that this injection will have a `Produce(Event)` method - the actual implementation is injected in `main.go` when the server starts.
 
 # Project Structure:
   - `/cmd`: contains subdirectories, each containing the following code for one microservice:
-    - `/internal`: code only used by the microservice (i.e., within the same `/cmd/<MICROSERVICE>` directory). Includes the following: 
+    - `/internal`: code only used by the microservice (i.e., within the same `/cmd/<MICROSERVICE>` directory). Includes the following:
       - `/application`: Route handlers. Includes a `server.go` file that defines the server's gRPC methods. The Event Consumer is an exception, as it only listens to the message queue and is not a gRPC server.
       - `/domain`: Business logic. Includes type definitions for domain objects and repository interfaces
       - `/infrastructure`: Data persistence logic. Includes repository implementations
-      - `main.go`: root file used to run this service
-    - `/proto`: contains protocol buffer definitions used by the gRPC server
+      - `main.go`: Root file used to run the service. Here, I load env variables, instantiate dependencies, and start the server.
+    - `/proto`: contains protocol buffer definitions used by the gRPC server and client(s).
       - .proto files are the source files
       - .pb.go files are generated during the build
 
