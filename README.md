@@ -38,7 +38,7 @@ This is a tweeting app API I built with a couple of personal goals in mind: 1) f
       - .pb.go files are generated during the build
 
 # API Architecture:
-![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-25+at+1.17.23+PM.png)
+![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-30+at+6.45.57+PM.png)
 
 # Pre-Requisites:
   - Go (https://golang.org/doc/install)
