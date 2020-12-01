@@ -1,10 +1,10 @@
 # Summary
-This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with some architectural design patterns (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is straightfoward - you can create a user, log in, create a tweet, and follow other users to view their tweets - all stuff that could be built with a simple REST API. However, I wanted to practice designing a different style of backend system all the while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
+This is a tweeting app API I built with a couple of personal goals in mind: 1) familiarize myself with event-driven architecture and 2) learn to write Go. I also learned to use gRPC and RabbitMQ during the process. This API's functionality is straightfoward - you can create a user, log in, create a tweet, and follow other users to view their tweets - all stuff that could be built with a simpler monolithic REST API. However, I wanted to practice designing a different style of backend system while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
 
 # Design Features:
   - [Event Driven Architecture (EDA)](https://en.wikipedia.org/wiki/Event-driven_architecture)
     - State-changing requests (i.e., creating a user, following a user, or creating a tweet) are processed via an event producer -> message queue -> event consumer.
-    - The event producer service can "fire and forget" each request as an event, which the consumer service then picks up to fulfill.
+    - The event producer service can "fire and forget" each request by publishing a message, which the consumer service then picks up from the queue to fulfill.
   - [Command Query Responsibility Segregation (CQRS)](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs):
     - This API separates read and write requests to optimize reads and prevent blocking of writes (see diagram below)
     - Reads are done via a Read View service, which stores a copy of all data in memory
