@@ -1,15 +1,14 @@
 # Summary
-This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with architectural design principles (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is simple - you can create a user, log in, create a tweet, and follow other users to view their tweet. However, I wanted to practice designing an efficient backend system all the while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
+This is a tweeting app API I built with a couple of learning goals in mind: 1) familiarize myself with some architectural design patterns (see Design Features below), and 2) learn new tech along the way (Go, gRPC, RabbitMQ). The API's functionality is straightfoward - you can create a user, log in, create a tweet, and follow other users to view their tweets - all stuff that could be built with a simple REST API. However, I wanted to practice designing a different style of backend system all the while learning to write idiomatic Go. Technologies used include Go, gRPC, RabbitMQ, and MongoDB.
 
 # Design Features:
   - [Event Driven Architecture (EDA)](https://en.wikipedia.org/wiki/Event-driven_architecture)
-    - Message Queue used to produce/consume state-changing events (in this case, database writes)
+    - State-changing requests (i.e., creating a user, following a user, or creating a tweet) are processed via an event producer -> message queue -> event consumer.
+    - The event producer service can "fire and forget" each request as an event, which the consumer service then picks up to fulfill.
   - [Command Query Responsibility Segregation (CQRS)](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs):
-    - This API separates read and write requests to optimize reads and prevent blocking of writes
-    - Reads are done via a Read View service, which stores a copy of data in memory
+    - This API separates read and write requests to optimize reads and prevent blocking of writes (see diagram below)
+    - Reads are done via a Read View service, which stores a copy of all data in memory
     - Writes are done via the message queue
-      - The Event Producer publishes a write event to the message queue
-      - The Event Consumer picks up and executes the event (i.e., writes to DB, then updates read view)
   - [Remote Procedure Call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call):
     - gRPC was used for direct communication with the UI and between services
       - This allows for the flexibility to handle UI requests either synchronously or asynchronously
@@ -18,8 +17,8 @@ This is a tweeting app API I built with a couple of learning goals in mind: 1) f
   - [Domain Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design):
     - Each microservice uses folder structure to separate logic into the following layers:
         - The Application layer defines the route handlers, i.e., the gRPC methods that a client is able to call. These handlers utilize domain objects and interfaces, but are not exposed to their implementation details.
-        - The Domain layer defines the domain objects (i.e., User, Follow, and Tweet) and their respective repository interfaces (if needed by the service). The Repository Pattern used by DDD is a means of abstracting the getting/saving of domain objects by utilizing repository objects.
-        - The Infrastructure layer implements the repositories, i.e., define the getting/saving functions. Note the implementations differ by service, but do one of the following:
+        - The Domain layer defines the domain objects (i.e., `User`, `Follow`, and `Tweet`) and their respective repository interfaces. The Repository Pattern used by DDD is a means of using repository objects to abstract the getting/saving of domain objects.
+        - The Infrastructure layer implements the repositories, i.e., define the getting/saving functions listed in their interfaces. Note the implementations differ by service, but do one of the following:
           - make a request to the database and/or Read View service to fetch domain objects
           - make a request to the database and/or Read View to save domain objects
           - produce an event that will save domain objects
