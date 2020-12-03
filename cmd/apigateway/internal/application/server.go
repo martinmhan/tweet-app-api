@@ -222,8 +222,8 @@ func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.GetFollowees
 	return &pbFollows, nil
 }
 
-// GetTweets returns the tweets created by a given UserID
-func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam) (*pb.Tweets, error) {
+// GetUserTweets returns the tweets created by a given UserID
+func (s *APIGatewayServer) GetUserTweets(ctx context.Context, in *pb.GetUserTweetsParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Tweets{}, errors.New("Failed to find JWT")
@@ -281,8 +281,8 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam)
 	return &pbTweets, nil
 }
 
-// GetTimeline returns the timeline (i.e., tweets of users that this user follows) of a given UserID
-func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.GetTimelineParam) (*pb.Tweets, error) {
+// GetTimelineTweets returns the timeline (i.e., tweets of users that this user follows) of a given UserID
+func (s *APIGatewayServer) GetTimelineTweets(ctx context.Context, in *pb.GetTimelineTweetsParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return &pb.Tweets{}, errors.New("Failed to find JWT")

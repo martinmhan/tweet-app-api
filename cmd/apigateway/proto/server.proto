@@ -11,8 +11,8 @@ service APIGateway {
   rpc createTweet(CreateTweetParam) returns(SimpleResponse) {}
   rpc getFollowers(GetFollowersParam) returns(Follows) {}
   rpc getFollowees(GetFolloweesParam) returns(Follows) {}
-  rpc getTweets(GetTweetsParam) returns(Tweets) {}
-  rpc getTimeline(GetTimelineParam) returns(Tweets) {}
+  rpc getUserTweets(GetUserTweetsParam) returns(Tweets) {}
+  rpc getTimelineTweets(GetTimelineTweetsParam) returns(Tweets) {}
 }
 
 message LoginUserParam {
@@ -37,11 +37,11 @@ message GetFollowersParam{}
 
 message GetFolloweesParam {}
 
-message GetTweetsParam {
+message GetUserTweetsParam {
   string UserID = 1;
 }
 
-message GetTimelineParam {}
+message GetTimelineTweetsParam {}
 
 
 message JWT {
