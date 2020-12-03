@@ -25,7 +25,7 @@ type APIGatewayServer struct {
 }
 
 // LoginUser provides a JWT given a valid username/password
-func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.UserConfig) (*pb.JWT, error) {
+func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.LoginUserParam) (*pb.JWT, error) {
 	valid, err := s.ValidatePassword(in.Username, in.Password)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (s *APIGatewayServer) LoginUser(ctx context.Context, in *pb.UserConfig) (*p
 }
 
 // CreateUser validates the new username, then calls the event producer to publish a CreateUser event and responds to the initial gRPC
-func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.UserConfig) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.CreateUserParam) (*pb.SimpleResponse, error) {
 	valid, err := s.ValidateUsername(in.Username)
 	if err != nil {
 		return nil, err
@@ -63,10 +63,15 @@ func (s *APIGatewayServer) CreateUser(ctx context.Context, in *pb.UserConfig) (*
 }
 
 // CreateTweet calls the event producer to create a new tweet, then responds to the initial gRPC
-func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.TweetText) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.CreateTweetParam) (*pb.SimpleResponse, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find metadata headers from context")
+		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.SimpleResponse{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
@@ -88,10 +93,15 @@ func (s *APIGatewayServer) CreateTweet(ctx context.Context, in *pb.TweetText) (*
 }
 
 // CreateFollow calls the event producer to make the current user a follower of the given UserID
-func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.FolloweeUserID) (*pb.SimpleResponse, error) {
+func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.CreateFollowParam) (*pb.SimpleResponse, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find metadata headers from context")
+		return &pb.SimpleResponse{Message: "Invalid JWT"}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.SimpleResponse{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
@@ -138,7 +148,12 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.FolloweeUser
 func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.GetFollowersParam) (*pb.Follows, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
+		return &pb.Follows{}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.Follows{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
@@ -172,7 +187,12 @@ func (s *APIGatewayServer) GetFollowers(ctx context.Context, in *pb.GetFollowers
 func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.GetFolloweesParam) (*pb.Follows, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.Follows{}, errors.New("Failed to find metadata headers from context")
+		return &pb.Follows{}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.Follows{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
@@ -206,7 +226,12 @@ func (s *APIGatewayServer) GetFollowees(ctx context.Context, in *pb.GetFollowees
 func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.Tweets{}, errors.New("Failed to find metadata headers from context")
+		return &pb.Tweets{}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.Tweets{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
@@ -216,6 +241,27 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam)
 	}
 
 	claims := token.Claims.(*auth.JWTClaims)
+
+	allowed := false
+	if in.UserID == claims.UserID {
+		allowed = true
+	} else {
+		followees, err := s.FollowRepository.FindFolloweesByUserID(claims.UserID)
+		if err != nil {
+			return &pb.Tweets{}, err
+		}
+
+		for _, f := range followees {
+			if f.FolloweeUserID == in.UserID {
+				allowed = true
+				break
+			}
+		}
+	}
+
+	if !allowed {
+		return &pb.Tweets{}, errors.New("Unauthorized: You must be a follower to view this user's tweets")
+	}
 
 	tweets, err := s.TweetRepository.FindByUserID(claims.UserID)
 	if err != nil {
@@ -239,7 +285,12 @@ func (s *APIGatewayServer) GetTweets(ctx context.Context, in *pb.GetTweetsParam)
 func (s *APIGatewayServer) GetTimeline(ctx context.Context, in *pb.GetTimelineParam) (*pb.Tweets, error) {
 	headers, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return &pb.Tweets{}, errors.New("Failed to find metadata headers from context")
+		return &pb.Tweets{}, errors.New("Failed to find JWT")
+	}
+
+	authHeaders := headers["authorization"]
+	if len(authHeaders) < 1 {
+		return &pb.Tweets{}, errors.New("Failed to find JWT")
 	}
 
 	tokenString := headers["authorization"][0]
