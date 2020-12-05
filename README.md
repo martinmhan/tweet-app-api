@@ -18,7 +18,7 @@ This is a tweeting app API I built with a couple of personal goals in mind: 1) f
     - Each microservice uses folder structure to separate logic into the following layers:
         - The Application layer defines the route handlers, i.e., the gRPC methods that a client is able to call. These handlers utilize domain objects and interfaces, but are not exposed to their implementation details.
         - The Domain layer defines the domain objects (i.e., `User`, `Follow`, and `Tweet`) and their respective repository interfaces. The Repository Pattern used by DDD is a means of using repository objects to abstract the getting/saving of domain objects.
-        - The Infrastructure layer implements the repositories, i.e., define the getting/saving functions listed in their interfaces. Note the implementations differ by service, but do one of the following:
+        - The Infrastructure layer implements the repositories and/or other interface dependencies in the domain. Note the repository implementations differ by service, but do one of the following:
           - make a request to the database and/or Read View service to fetch domain objects
           - make a request to the database and/or Read View to save domain objects
           - produce an event that will save domain objects
@@ -36,6 +36,10 @@ This is a tweeting app API I built with a couple of personal goals in mind: 1) f
     - `/proto`: contains protocol buffer definitions used by the gRPC server and client(s).
       - .proto files are the source files
       - .pb.go files are generated during the build
+  - `/scripts/db`
+    - JS scripts to create and upgrade a Mongo database, all run in order by the `upgrade.sh` script
+  - `/test`
+    - TO DO
 
 # API Architecture:
 ![API Architecture](https://gitbuckets.s3-us-west-1.amazonaws.com/tweet-app-api/Screen+Shot+2020-11-30+at+6.45.57+PM.png)
