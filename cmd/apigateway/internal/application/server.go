@@ -112,12 +112,14 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.CreateFollow
 
 	claims := token.Claims.(*auth.JWTClaims)
 	currentUserID := claims.UserID
-	followeeUserID := in.FolloweeUserID
-	if currentUserID == followeeUserID {
+	currentUsername := claims.Username
+
+	followeeUsername := in.FolloweeUsername
+	if currentUsername == followeeUsername {
 		return &pb.SimpleResponse{Message: "A user cannot follow him/her self"}, errors.New("Failed to follow user: cannot follow yourself")
 	}
 
-	followee, err := s.UserRepository.FindByID(followeeUserID)
+	followee, err := s.UserRepository.FindByUsername(followeeUsername)
 	if followee.ID == "" {
 		return &pb.SimpleResponse{Message: "Invalid UserID"}, errors.New("Failed to follow user : Invalid UserID")
 	}
@@ -126,15 +128,16 @@ func (s *APIGatewayServer) CreateFollow(ctx context.Context, in *pb.CreateFollow
 	if err != nil {
 		return &pb.SimpleResponse{Message: "Failed to create follow"}, errors.New("Failed to follow user : Error")
 	}
+
 	for _, f := range followees {
-		if f.FolloweeUserID == followeeUserID {
+		if f.FolloweeUsername == followeeUsername {
 			return &pb.SimpleResponse{Message: "Failed to create follow"}, errors.New("You already follow this user")
 		}
 	}
 
 	f := follow.Config{
 		FollowerUserID: currentUserID,
-		FolloweeUserID: followeeUserID,
+		FolloweeUserID: followee.ID,
 	}
 	err = s.ProduceFollowCreation(f)
 	if err != nil {
